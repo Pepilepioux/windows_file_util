@@ -25,6 +25,9 @@
     C'est une liste de valeurs séparées par des virgules, à mettre entre
     guillemets si un nom contient des espaces.
     Typiquement on mettra -e "Administrateurs , Système, Domain Admins, Administrateurs de l'entreprise"
+    
+    L'argument -f, --fichiers, indique qu'on veut aussi afficher les permissions des fichiers.
+    Par défaut on ne traite que les répertoires.
 
 """
 
