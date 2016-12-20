@@ -1,5 +1,5 @@
 # windows_file_util
-Python modules to handle files and file permission in windows environment
+Python modules to handle files and file permission in windows environment.
 
 ## License
 This work is licensed under [Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/legalcode)
