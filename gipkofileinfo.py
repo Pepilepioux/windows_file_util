@@ -128,17 +128,17 @@ def get_perm(file):
 
 
 #   -----------------------------------------------------------------------
-def remove_perm(file, *users, verbose=False):
+def remove_perm(file, *users, verbose=0):
     """
     Inspiré de http://stackoverflow.com/questions/26465546/how-to-authorize-deny-write-access-to-a-directory-on-windows-using-python
-    Syntaxe : 
+    Syntaxe :
         remove_perm('file', 'u1', 'u2', ..., 'un', verbose=x)
         OU
-        remove_perm('fil', *['u1', 'u2', ..., 'un'], verbose=x)
+        remove_perm('file', *['u1', 'u2', ..., 'un'], verbose=x)
         OU
-        remove_perm('fil', *('u1', 'u2', ..., 'un'), verbose=x)
+        remove_perm('file', *('u1', 'u2', ..., 'un'), verbose=x)
     """
-    
+
     mask = win32security.OWNER_SECURITY_INFORMATION | win32security.GROUP_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION
     sd = win32security.GetFileSecurity(file, mask)
     ownersid = sd.GetSecurityDescriptorOwner()
@@ -151,13 +151,15 @@ def remove_perm(file, *users, verbose=False):
         try:
             user, domain, int = win32security.LookupAccountSid(None, ace[2])
         except:
-            user = ace[2]
+            user = '%s' % ace[2]
 
-        if user.lower() in liste_users:
+        if user.lower() in users:
             if verbose:
-                print('On va supprimer %s pour %s' % (userid, file))
+                print('On supprime %s pour %s' % (user, file))
             a_supprimer.append(i)
 
+    a_supprimer.reverse()
+    #   Super important, le reverse, si on supprime plusieurs éléments !
     for i in a_supprimer:
         dacl.DeleteAce(i)
 
