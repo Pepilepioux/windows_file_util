@@ -13,8 +13,7 @@
     retraitement dans un tableur.
 
     L'argument -n, --niveau, indique le nombre de niveaux maximal à afficher.
-    1 (la valeur par défaut) se limite aux sous-répertoires directs du répertoire
-    de base.
+    Par défaut on parcourt toute l'arborescence.
 
     L'argument -o, --output, donne le nom de base des fichiers résultat. Les
     extensions .txt et .csv sont ajoutées par le programme.
@@ -25,7 +24,7 @@
     C'est une liste de valeurs séparées par des virgules, à mettre entre
     guillemets si un nom contient des espaces.
     Typiquement on mettra -e "Administrateurs , Système, Domain Admins, Administrateurs de l'entreprise"
-    
+
     L'argument -f, --fichiers, indique qu'on veut aussi afficher les permissions des fichiers.
     Par défaut on ne traite que les répertoires.
 
@@ -50,7 +49,7 @@ def LireParametres():
     parser = argparse.ArgumentParser(description='Liste des permissions sur les répertoires')
     parser.add_argument('--exclude', '-e', action='store', help='Utilisateurs à exclure de l\'affichage', default='')
     parser.add_argument('--output', '-o', action='store', help='Nom de base des fichiers en sortie', default=os.path.join(rep, nom))
-    parser.add_argument('--niveau', '-n', type=int, default=1, action='store', help='nombre de niveaux maximal à afficher')
+    parser.add_argument('--niveau', '-n', type=int, action='store', help='nombre de niveaux maximal à afficher')
     parser.add_argument('--fichiers', '-f', action='count', help='Afficher AUSSI les permissions des fichiers')
     parser.add_argument('nomRepBase', default=os.path.realpath('.'), action='store', help='Nom du répertoire à examiner', nargs='?')
     args = parser.parse_args()
@@ -72,7 +71,8 @@ nomRepBase, niveaumax, nomFicSortie, liste_exclusions, fichiers_aussi = LirePara
 if nomRepBase[-1] != '\\':
     nomRepBase += '\\'
 
-niveaumax += nomRepBase.count('\\') - 1
+if niveaumax:
+    niveaumax += nomRepBase.count('\\') - 1
 
 nomFicSortie1 = nomFicSortie + '.txt'
 nomFicSortie2 = nomFicSortie + '.csv'
@@ -85,9 +85,10 @@ lgmax = 0
 nb = 0
 
 for D, dirs, fics in os.walk(nomRepBase):
-    niveau = D.count('\\')
-    if niveau >= niveaumax:
-        continue
+    if niveaumax:
+        niveau = D.count('\\')
+        if niveau >= niveaumax:
+            continue
 
     for dir in dirs:
         nomComplet = os.path.join(D, dir)
