@@ -28,6 +28,16 @@
     L'argument -f, --fichiers, indique qu'on veut aussi afficher les permissions des fichiers.
     Par défaut on ne traite que les répertoires.
 
+    Historique :
+
+    Version 1.1 2017-01-04
+        Si on veut repérer les anomalies il est intéressant d'exclure tous les utilisateurs qu'on
+        doit normalement trouver dans toute l'arborescence. Mais dans ce cas on se retrouve avec
+        un fichier qui a des tas de lignes qui contiennent juste un nom de répertoire, avec
+        aucun utilisateur autorisé. Pour la lisibilité ça fait un peu fouillis...
+        S'il n'y a pas de permission à afficher pour un répertoire en tenant compte des exclusions
+        on n'affiche donc pas le répertoire.
+
 """
 
 import argparse
@@ -35,6 +45,7 @@ import os
 import sys
 import gipkofileinfo
 
+VERSION = '1.1'
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 def LireParametres():
@@ -84,6 +95,9 @@ liste_fics = {}
 lgmax = 0
 nb = 0
 
+"""
+    Premier passage : on ramène en vrac toutes les infos
+"""
 for D, dirs, fics in os.walk(nomRepBase):
     if niveaumax:
         niveau = D.count('\\')
@@ -111,6 +125,9 @@ for D, dirs, fics in os.walk(nomRepBase):
             liste_fics[D].append([fic, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
 
 
+"""
+    Pour faire plus propre on trie tout ça
+"""
 liste_dirs.sort()
 
 lgmax += 5
@@ -120,15 +137,36 @@ ficSortie1 = open(nomFicSortie1, 'w')
 ficSortie2 = open(nomFicSortie2, 'w')
 ficSortie3 = open(nomFicSortie3, 'w')
 
-for dir in liste_dirs:
-    if fichiers_aussi:
-        ficSortie1.write('\n-------------------------------------')
+if fichiers_aussi:
+    # Version 1.1 2017-01-04
+    # ficSortie1.write('\n-------------------------------------')
+    ligne_separateur = '\n-------------------------------------'
+else:
+    ligne_separateur = ''
+    # Fin
 
-    ficSortie1.write(chaineformat.format(dir[0], dir[1]))
+"""
+    Et c'est parti pour la mise en forme des informations.
+"""
+for dir in liste_dirs:
+    # Version 1.1 2017-01-04
+    # ficSortie1.write(chaineformat.format(dir[0], dir[1]))
+    ligne_nom_repertoire = chaineformat.format(dir[0], dir[1])
+    # Fin
+
     for e in dir[2]:
         if e[0].lower() in liste_exclusions:
             continue
 
+        # Version 1.1 2017-01-04
+        if ligne_nom_repertoire:
+            if ligne_separateur:
+                ficSortie1.write(ligne_separateur)
+                
+            ficSortie1.write(ligne_nom_repertoire)
+            ligne_nom_repertoire = ''
+        # Fin Version 1.1 2017-01-04
+        
         ficSortie1.write('\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
         ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
 
@@ -144,10 +182,29 @@ for dir in liste_dirs:
             #   n'ont pas été parcourus à la recherche des fichiers. La clé correspondante n'existe
             #   pas. Donc on plante...
             for f in liste_fics[dir[0]]:
-                ficSortie1.write('\n')
-                ficSortie1.write('\t\t{0: <20}\n'.format(f[0]))
+                # Version 1.1 2017-01-04
+                # ficSortie1.write('\n')
+                # ficSortie1.write('\t\t{0: <20}\n'.format(f[0]))
+                
+                ligne_nom_fichier = '\n\t\t{0: <20}\n'.format(f[0])
+                
+                # Fin Version 1.1 2017-01-04
 
                 for e in f[2]:
+                    if e[0].lower() in liste_exclusions:
+                        continue
+
+                    if ligne_nom_repertoire:
+                        if ligne_separateur:
+                            ficSortie1.write(ligne_separateur)
+                            
+                        ficSortie1.write(ligne_nom_repertoire)
+                        ligne_nom_repertoire = ''
+                    
+                    if ligne_nom_fichier:
+                        ficSortie1.write(ligne_nom_fichier)
+                        ligne_nom_fichier = ''
+                    
                     ficSortie1.write('\t\t\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
                     ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
 
