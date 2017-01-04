@@ -24,6 +24,11 @@ The threshold can be a value in Gb, Tb, etc, or a percentage of free space.
 The program will output its results in a log file, and if the disk occupation threshold is exceeded on any disk it will
 send an alert by mail. (mailing parameters also defined in ini file).
 
+## Dependencies
+* python 3 (developed and tested with python 3.4)
+* (some modules) gipkomail available at (https://github.com/Pepilepioux/server_stats/)
+
+
 ## License
 This work is licensed under [Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/legalcode)
 
