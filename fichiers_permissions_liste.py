@@ -47,6 +47,7 @@ import gipkofileinfo
 
 VERSION = '1.1'
 
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 def LireParametres():
     if hasattr(sys, 'frozen'):
@@ -162,11 +163,11 @@ for dir in liste_dirs:
         if ligne_nom_repertoire:
             if ligne_separateur:
                 ficSortie1.write(ligne_separateur)
-                
+
             ficSortie1.write(ligne_nom_repertoire)
             ligne_nom_repertoire = ''
         # Fin Version 1.1 2017-01-04
-        
+
         ficSortie1.write('\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
         ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
 
@@ -185,9 +186,9 @@ for dir in liste_dirs:
                 # Version 1.1 2017-01-04
                 # ficSortie1.write('\n')
                 # ficSortie1.write('\t\t{0: <20}\n'.format(f[0]))
-                
+
                 ligne_nom_fichier = '\n\t\t{0: <20}\n'.format(f[0])
-                
+
                 # Fin Version 1.1 2017-01-04
 
                 for e in f[2]:
@@ -197,14 +198,14 @@ for dir in liste_dirs:
                     if ligne_nom_repertoire:
                         if ligne_separateur:
                             ficSortie1.write(ligne_separateur)
-                            
+
                         ficSortie1.write(ligne_nom_repertoire)
                         ligne_nom_repertoire = ''
-                    
+
                     if ligne_nom_fichier:
                         ficSortie1.write(ligne_nom_fichier)
                         ligne_nom_fichier = ''
-                    
+
                     ficSortie1.write('\t\t\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
                     ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
 
