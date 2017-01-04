@@ -26,7 +26,7 @@ send an alert by mail. (mailing parameters also defined in ini file).
 
 ## Dependencies
 * python 3 (developed and tested with python 3.4)
-* (some modules) gipkomail available at (https://github.com/Pepilepioux/server_stats/)
+* (some modules) gipkomail available [here] (https://github.com/Pepilepioux/server_stats/)
 
 
 ## License
