@@ -185,7 +185,7 @@ for dir in liste_dirs:
             try:
                 ficSortie1.write(ligne_nom_repertoire)
             except Exception as excpt:
-                texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '?' for i in range(len(ligne_nom_repertoire))])
+                texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
                 ficSortie1.write(texte_remplacement)
                 ficSortie3.write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
 
@@ -200,21 +200,21 @@ for dir in liste_dirs:
         try:
             ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
         except Exception as excpt:
-            texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+            texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
             ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(texte_remplacement, dir[1], e[0], e[1], e[2]))
 
         if e[0][:6] == 'PySID:':
             try:
                 ficSortie3.write('Erreur utilisateur {0} dans {1}\n'.format(e[0], dir[0]))
             except Exception as excpt:
-                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
                 ficSortie3.write('Erreur utilisateur {0} dans {1}\n'.format(e[0], texte_remplacement))
 
         if dir[1][:6] == 'PySID:':
             try:
                 ficSortie3.write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], dir[0]))
             except Exception as excpt:
-                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
                 ficSortie3.write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], texte_remplacement))
 
     if fichiers_aussi:
@@ -246,7 +246,7 @@ for dir in liste_dirs:
                         try:
                             ficSortie1.write(ligne_nom_repertoire)
                         except Exception as excpt:
-                            texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '?' for i in range(len(ligne_nom_repertoire))])
+                            texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
                             ficSortie1.write(texte_remplacement)
                             ficSortie3.write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
 
@@ -256,7 +256,7 @@ for dir in liste_dirs:
                         try:
                             ficSortie1.write(ligne_nom_fichier)
                         except Exception as excpt:
-                            texte_remplacement = ''.join([ligne_nom_fichier[i] if ord(ligne_nom_fichier[i]) < 255 else '?' for i in range(len(ligne_nom_fichier))])
+                            texte_remplacement = ''.join([ligne_nom_fichier[i] if ord(ligne_nom_fichier[i]) < 255 else '¶' for i in range(len(ligne_nom_fichier))])
                             ficSortie1.write(texte_remplacement)
                             ficSortie3.write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
 
@@ -271,8 +271,8 @@ for dir in liste_dirs:
                     try:
                         ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
                     except Exception as excpt:
-                        texte_remplacement_d = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
-                        texte_remplacement_f = ''.join([f[0][i] if ord(f[0][i]) < 255 else '?' for i in range(len(f[0]))])
+                        texte_remplacement_d = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
+                        texte_remplacement_f = ''.join([f[0][i] if ord(f[0][i]) < 255 else '¶' for i in range(len(f[0]))])
                         ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(texte_remplacement_d, texte_remplacement_f, e[0], e[1], e[2]))
                         ficSortie3.write('{1} , {2} : Erreur, {0}\n'.format(excpt, texte_remplacement_d, texte_remplacement_f))
 
