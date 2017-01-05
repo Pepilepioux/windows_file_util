@@ -80,7 +80,16 @@ for D, dirs, fics in os.walk(nomRepBase):
                 print('\tOn traite %s' % nomComplet)
             except:
                 pass
-        gipkofileinfo.remove_perm(nomComplet, *liste_users, verbose=verbose)
+
+        try:
+            # Oui, ça plante si un zozo a mis un nom de fichier à rallonge qui fait dépasser la limite windows des 255 caractères...
+            # Ça peut aussi planter si un abruti met de l'unicode dans un nom de fichier. Expérience vécue.
+            gipkofileinfo.remove_perm(nomComplet, *liste_users, verbose=verbose)
+        except Exception as excpt:
+            tb = None
+            texte_remplacement = ''.join([nomComplet[i] if ord(nomComplet[i]) < 255 else '¶' for i in range(len(nomComplet))])
+            print('\n%s' % texte_remplacement)
+            print(excpt.with_traceback(tb))
 
     for fic in fics:
         nomComplet = os.path.join(D, fic)
@@ -91,4 +100,10 @@ for D, dirs, fics in os.walk(nomRepBase):
                 print('\tOn traite %s' % nomComplet)
             except:
                 pass
-        gipkofileinfo.remove_perm(nomComplet, *liste_users, verbose=verbose)
+        try:
+            gipkofileinfo.remove_perm(nomComplet, *liste_users, verbose=verbose)
+        except Exception as excpt:
+            tb = None
+            texte_remplacement = ''.join([nomComplet[i] if ord(nomComplet[i]) < 255 else '¶' for i in range(len(nomComplet))])
+            print('\n%s' % texte_remplacement)
+            print(excpt.with_traceback(tb))
