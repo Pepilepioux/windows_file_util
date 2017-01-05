@@ -99,6 +99,7 @@ liste_fics = {}
 
 lgmax = 0
 nb = 0
+etapes = '\\|/-'
 
 """
     Premier passage : on ramène en vrac toutes les infos
@@ -113,9 +114,8 @@ for D, dirs, fics in os.walk(nomRepBase):
         nomComplet = os.path.join(D, dir)
         niveau = nomComplet.count('\\')
 
+        sys.stdout.write('\r\t%s' % etapes[nb % 4])
         nb += 1
-        if nb % 100 == 0:
-            print(nb, nomComplet)
 
         if len(nomComplet) > lgmax:
             lgmax = len(nomComplet)
@@ -127,6 +127,10 @@ for D, dirs, fics in os.walk(nomRepBase):
         liste_fics[D] = []
         for fic in fics:
             nomComplet = os.path.join(D, fic)
+
+            sys.stdout.write('\r\t%s' % etapes[nb % 4])
+            nb += 1
+
             liste_fics[D].append([fic, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
 
 
@@ -189,6 +193,9 @@ for dir in liste_dirs:
         # Fin Version 1.1 2017-01-04
 
         ficSortie1.write('\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
+
+        sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
+        nb += 1
 
         try:
             ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
@@ -255,6 +262,9 @@ for dir in liste_dirs:
 
                         ligne_nom_fichier = ''
 
+                    sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
+                    nb += 1
+
                     # Là on ne traite que de l'ascii, y'a pas de problème
                     ficSortie1.write('\t\t\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
 
@@ -273,7 +283,7 @@ ficSortie1.close()
 ficSortie2.close()
 ficSortie3.close()
 
-print('Liste des permissions de %s inscrite dans %s et %s (erreurs dans %s)' %
+print('\n\nListe des permissions de %s inscrite dans %s et %s (erreurs dans %s)' %
       (nomRepBase, nomFicSortie1, nomFicSortie2, nomFicSortie3))
 
 exit()
