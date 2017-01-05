@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 """
     Liste des permissions sur les répertoires
@@ -37,6 +37,10 @@
         aucun utilisateur autorisé. Pour la lisibilité ça fait un peu fouillis...
         S'il n'y a pas de permission à afficher pour un répertoire en tenant compte des exclusions
         on n'affiche donc pas le répertoire.
+
+        De plus on peut avoir des noms de fichiers et de répertoire avec des caractères à la con
+        (unicode). Quand on écrit un nom de répertoire ou de fichier il faut donc faire un try/except
+        et traiter ces caractères parasites.
 
 """
 
@@ -150,8 +154,18 @@ else:
     Et c'est parti pour la mise en forme des informations.
 """
 for dir in liste_dirs:
-    # Version 1.1 2017-01-04
-    # ficSortie1.write(chaineformat.format(dir[0], dir[1]))
+    """
+        Version 1.1 2017-01-04
+        ficSortie1.write(chaineformat.format(dir[0], dir[1]))
+
+        On n'écrit plus directement la ligne contenant le nom du répertoire, on la prépare
+        et on ne l'écrira que si c'est nécessaire, c'est à dire s'il y a une ligne de droits utilisateur
+        à écrire
+
+        dir[0] : nom du répertoire
+        dir[1] : propriétaire du répertoire
+        dir[2] : liste des utilisateurs avec pour chacun la liste de ses droits
+    """
     ligne_nom_repertoire = chaineformat.format(dir[0], dir[1])
     # Fin
 
@@ -164,18 +178,37 @@ for dir in liste_dirs:
             if ligne_separateur:
                 ficSortie1.write(ligne_separateur)
 
-            ficSortie1.write(ligne_nom_repertoire)
+            try:
+                ficSortie1.write(ligne_nom_repertoire)
+            except Exception as excpt:
+                texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '?' for i in range(len(ligne_nom_repertoire))])
+                ficSortie1.write(texte_remplacement)
+                ficSortie3.write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
+
             ligne_nom_repertoire = ''
         # Fin Version 1.1 2017-01-04
 
         ficSortie1.write('\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
-        ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
+
+        try:
+            ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
+        except Exception as excpt:
+            texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+            ficSortie2.write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(texte_remplacement, dir[1], e[0], e[1], e[2]))
 
         if e[0][:6] == 'PySID:':
-            ficSortie3.write('Erreur utilisateur {0} dans {1}\n'.format(e[0], dir[0]))
+            try:
+                ficSortie3.write('Erreur utilisateur {0} dans {1}\n'.format(e[0], dir[0]))
+            except Exception as excpt:
+                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+                ficSortie3.write('Erreur utilisateur {0} dans {1}\n'.format(e[0], texte_remplacement))
 
         if dir[1][:6] == 'PySID:':
-            ficSortie3.write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], dir[0]))
+            try:
+                ficSortie3.write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], dir[0]))
+            except Exception as excpt:
+                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+                ficSortie3.write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], texte_remplacement))
 
     if fichiers_aussi:
         try:
@@ -183,9 +216,13 @@ for dir in liste_dirs:
             #   n'ont pas été parcourus à la recherche des fichiers. La clé correspondante n'existe
             #   pas. Donc on plante...
             for f in liste_fics[dir[0]]:
-                # Version 1.1 2017-01-04
-                # ficSortie1.write('\n')
-                # ficSortie1.write('\t\t{0: <20}\n'.format(f[0]))
+                """
+                    Version 1.1 2017-01-04
+                    ficSortie1.write('\n')
+                    ficSortie1.write('\t\t{0: <20}\n'.format(f[0]))
+
+                    Idem répertoire plus haut
+                """
 
                 ligne_nom_fichier = '\n\t\t{0: <20}\n'.format(f[0])
 
@@ -199,15 +236,35 @@ for dir in liste_dirs:
                         if ligne_separateur:
                             ficSortie1.write(ligne_separateur)
 
-                        ficSortie1.write(ligne_nom_repertoire)
+                        try:
+                            ficSortie1.write(ligne_nom_repertoire)
+                        except Exception as excpt:
+                            texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '?' for i in range(len(ligne_nom_repertoire))])
+                            ficSortie1.write(texte_remplacement)
+                            ficSortie3.write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
+
                         ligne_nom_repertoire = ''
 
                     if ligne_nom_fichier:
-                        ficSortie1.write(ligne_nom_fichier)
+                        try:
+                            ficSortie1.write(ligne_nom_fichier)
+                        except Exception as excpt:
+                            texte_remplacement = ''.join([ligne_nom_fichier[i] if ord(ligne_nom_fichier[i]) < 255 else '?' for i in range(len(ligne_nom_fichier))])
+                            ficSortie1.write(texte_remplacement)
+                            ficSortie3.write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
+
                         ligne_nom_fichier = ''
 
+                    # Là on ne traite que de l'ascii, y'a pas de problème
                     ficSortie1.write('\t\t\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
-                    ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
+
+                    try:
+                        ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
+                    except Exception as excpt:
+                        texte_remplacement_d = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '?' for i in range(len(dir[0]))])
+                        texte_remplacement_f = ''.join([f[0][i] if ord(f[0][i]) < 255 else '?' for i in range(len(f[0]))])
+                        ficSortie2.write('{0}\t\t{1}\t{2}\t{3}\n'.format(texte_remplacement_d, texte_remplacement_f, e[0], e[1], e[2]))
+                        ficSortie3.write('{1} , {2} : Erreur, {0}\n'.format(excpt, texte_remplacement_d, texte_remplacement_f))
 
         except:
             pass

@@ -1,6 +1,31 @@
 ﻿#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+"""
+    Parcourt l'arborescence passée en argument et pour tous les fichiers et répertoires
+    supprime (s'ils existent) les droits d'accès des utilisateurs passés en argument.
+
+
+    usage: fichiers_permissions_suppression.py  [-h]
+                                                [--users USERS]
+                                                [--verbose]
+                                                [nomRepBase]
+
+    positional arguments:
+      nomRepBase            Nom du répertoire de base à traiter. Par défaut, le
+                            répertoire courant
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --users USERS, -u USERS
+                            Utilisateurs dont il faut supprimer les droits. Liste
+                            de noms séparés par des virgules, entre guillements
+                            s'il y a des espaces
+
+      --verbose, -v         Affichier le détail des opérations
+
+"""
+
 import argparse
 import os
 import sys
