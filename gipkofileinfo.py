@@ -136,7 +136,7 @@ def get_perm(file):
         sys_id = domain_id.split('\\')[1]
         #   sys_id = str(sys_id)
         mask_name = get_mask(mask)
-        perm_list.append([sys_id, mask_name, type_perm, perm[0], perm[1][0], perm[1][1]])
+        perm_list.append([sys_id.lower(), mask_name, type_perm, perm[0], perm[1][0], perm[1][1]])
     perm_list.sort()
 
     return perm_list
