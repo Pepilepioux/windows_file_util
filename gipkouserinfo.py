@@ -75,7 +75,7 @@ class UserInfo:
             code_page           last_logoff         parms               script_path
             comment             last_logon          password            units_per_week
             country_code        logon_hours         password_age        user_id
-            flags               logon_self.server        password_expired    usr_comment
+            flags               logon_self.server   password_expired    usr_comment
 
             N.B. On met les noms d'utilisteurs en minuscules pour ne pas être emmerdé quand on voudra faire
             "if nom in liste"
@@ -169,7 +169,7 @@ class UserInfo:
 
     #   -------------------------------------------------------------------------------
     def get_user_s_groups(self, user):
-        if user.lower() in self.user_s_groups_list:
+        try:
             return self.user_s_groups_list[user.lower()]
-        else:
+        except KeyError:
             return None
