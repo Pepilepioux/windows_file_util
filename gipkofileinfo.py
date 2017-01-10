@@ -1,13 +1,28 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 """
-Donne des informations de sécurité sur un fichier windows
+    Donne des informations de sécurité sur un fichier windows.
 
-Récupéré sur http://grokbase.com/t/python/python-win32/051wwq1aw3/folder-permissions,
-http://www.programcreek.com/python/example/52870/win32security.GetFileSecurity pour
-la fontion get_owner,
-http://stackoverflow.com/questions/26465546/how-to-authorize-deny-write-access-to-a-directory-on-windows-using-python
-pour la fonction remove_perm
+    Syntaxe : liste_droits = get_perm(nom_fichier)
+    Chaque élément de la liste retournée est une liste contenant dans cet ordre :
+    - Nom de l'utilisateur ou du groupe
+    - Droit d'accès textuel ("read", "change", "full control" etc)
+    - Type du droit précédent : "" si droit accordé, "REFUS" sinon
+    - Droit d'accès sous forme numérique (masque) tel qu'il est renvoyé par le système
+    - Type du droit tel qu'il est renvoyé par le système, 0 = accordé, 1 = refusé.
+        Sachant que le refus est prioritaire.
+    - Information sur l'héritage et la propagation. (Pas très clair aujourd'hui)
+
+    Récupéré sur http://grokbase.com/t/python/python-win32/051wwq1aw3/folder-permissions,
+    http://www.programcreek.com/python/example/52870/win32security.GetFileSecurity pour
+    la fontion get_owner,
+    http://stackoverflow.com/questions/26465546/how-to-authorize-deny-write-access-to-a-directory-on-windows-using-python
+    pour la fonction remove_perm
+
+    Version 2 2017-01-10
+        La version 1 renvoyait les résultats interprétés.
+        Comme ça peut être utile la version 2 renvoie AUSSI les résultats bruts en éléments 3, 4 et 5 de la liste
+
 """
 #
 import win32security
@@ -87,9 +102,9 @@ def fileperm_get_perms(file):
         #   ace[0][0] = 1 signifie refus
         try:
             user, domain, int = win32security.LookupAccountSid(None, ace[2])
-            all_perms[domain + "\\" + user] = (ace[1], ace[0][0])
+            all_perms[domain + "\\" + user] = (ace[1], ace[0])
         except:
-            all_perms['Domaine\\%s' % ace[2]] = (ace[1], ace[0][0])
+            all_perms['Domaine\\%s' % ace[2]] = (ace[1], ace[0])
     return all_perms
 
 
@@ -117,11 +132,11 @@ def get_perm(file):
     all_perms = fileperm_get_perms(file)
     for (domain_id, perm) in all_perms.items():
         mask = perm[0]
-        type_perm = 'REFUS' if perm[1] == 1 else ''
+        type_perm = 'REFUS' if perm[1][0] == 1 else ''
         sys_id = domain_id.split('\\')[1]
         #   sys_id = str(sys_id)
         mask_name = get_mask(mask)
-        perm_list.append([sys_id, mask_name, type_perm])
+        perm_list.append([sys_id, mask_name, type_perm, perm[0], perm[1][0], perm[1][1]])
     perm_list.sort()
 
     return perm_list
