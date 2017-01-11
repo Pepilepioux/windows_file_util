@@ -115,7 +115,7 @@ class UserInfo:
 
             Idem avec le groupe "users" :
             Les groupes intégrés ont des affichages farfelus en fonction de l'interface.
-            Le même groupe s'affiche "Domaine\Users" dans la fenêtre windows, "BUILTIN\Utilisateurs"
+            Le même groupe s'affiche "Domaine\\Users" dans la fenêtre windows, "BUILTIN\\Utilisateurs"
             dans une fenêtre DOS (et ça, évidemment, ça change avec la langue de l'installation...),
             et "Domain Users" quand on appelle win32net.NetGroupGetUsers...
             Et on n'est pas à l'abri de nouvelles découvertes !
