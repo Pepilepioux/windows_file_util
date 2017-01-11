@@ -222,14 +222,12 @@ def get_user_s_perm(file, user, user_info):
                 #   Ecriture interdite...
                 #   Et comme on peut avoir plusieurs ACE de refus successifs on va pas
                 #   remonter le niveau.
-                print('(perm[3] & 2) and niveau_max > 1')
                 niveau_max = 1
 
             if perm[3] & 1:
                 #   Lecture interdite. En toute rigueur lecture interdite + écriture autorisée
                 #   l'utilisateur peut créer un nouveau fichier.
                 #   Mais on a dit qu'on restait dans la simplicité.
-                print('(perm[3] & 1)')
                 niveau_max = 0
                 break
                 #   Pas la peine de continuer, il a aucun accès.
@@ -238,10 +236,8 @@ def get_user_s_perm(file, user, user_info):
             #   On traite les autorisations
             for i in range(1, 3):
                 if perm[3] & i >= niveau_max > niveau:
-                    print('i = %s, perm[3] & i = %s' % (i, (perm[3] & i)))
                     niveau = perm[3] & i
 
-        print('Niveau : %s' % niveau)
         if niveau >= niveau_max:
             break
 
