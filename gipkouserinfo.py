@@ -106,6 +106,20 @@ class UserInfo:
                 else:
                     dict[u] = [g[0]]
 
+        """
+            Une horrible verrue est nécessaire :
+            pour microsoft tous les utilisateurs appartiennent au groupe... "Tout le monde" (!), mais
+            ce groupe n'apparaît pas dans la liste renvoyée par win32net.NetGroupEnum.
+            Il faut donc le rajouter à la main.
+            Faudra voir comment ça marche dans les autres langues...
+
+            Idem avec le groupe "users" :
+            Les groupes intégrés ont des affichages farfelus en fonction de l'interface.
+            Le même groupe s'affiche "Domaine\Users" dans la fenêtre windows, "BUILTIN\Utilisateurs"
+            dans une fenêtre DOS (et ça, évidemment, ça change avec la langue de l'installation...),
+            et "Domain Users" quand on appelle win32net.NetGroupGetUsers...
+            Et on n'est pas à l'abri de nouvelles découvertes !
+        """
         for u in dict:
             dict[u].append('tout le monde')
 
