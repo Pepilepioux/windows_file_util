@@ -105,6 +105,7 @@ etapes = '\\|/-'
     Premier passage : on ramène en vrac toutes les infos
 """
 for D, dirs, fics in os.walk(nomRepBase):
+    sys.stdout.write('\r\t%s' % etapes[nb % 4])
     if niveaumax:
         niveau = D.count('\\')
         if niveau >= niveaumax:

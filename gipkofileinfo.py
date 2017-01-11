@@ -182,4 +182,69 @@ def remove_perm(file, *users, verbose=0):
         sd.SetSecurityDescriptorDacl(1, dacl, 0)   # may not be necessary
         win32security.SetFileSecurity(file, win32security.DACL_SECURITY_INFORMATION, sd)
 
+
+#   -----------------------------------------------------------------------
+def get_user_s_perm(file, user, user_info):
+    """
+        Renseigne sur les droits d'accès d'un utilisateur sur un fichier.
+        Pour commencer on fait simple, ça renvoie 0 (aucun droit), 1 (lecture)
+        ou 2 (écriture).
+        Et on considère que ces droits sont hiérarchisé. En fait on pourrait très bien autoriser
+        l'écriture mais interdire la lecture. Dans la pratique ça marche quand même pas terrible.
+
+        Pour une vue d'ensemble ça suffit.
+
+        Amélioration à prévoir : indiquer en plus si l'autorisation est donnée individuellement
+        ou par appartenance à un groupe.
+
+        Par précaution en pensant aux futures évolutions on renvoie dès maintenant une liste.
+
+        Arguments :
+            file = nom du fichier
+            user = nom de l'utilisateur
+            user_info = objet UserInfo défini dans gipkouserinfo. Cet objet contient la liste
+                        des utilisateurs et des groupes définis dans un serveur AD avec la
+                        liste des groupes auxquel appartient chaque utilisateur.
+    """
+    users_groups = user_info.get_user_s_groups(user)
+    file_perms = get_perm(file)
+    liste_utile = [e for e in file_perms if (e[0] in users_groups or e[0] == user.lower())]
+    liste_utile.sort(key=lambda x: x[4], reverse=True)
+    #   Comme ça s'il y a des ACE de type "refus" on les traitera en premier. Comme windows...
+
+    niveau = 0  # Le niveau d'autorisation qu'on renverra
+    niveau_max = 2  # Oui, en dur, parce que c'est comme ça dans windows : 1 = lecture, 2 = écriture.
+
+    for perm in liste_utile:
+        if perm[4] is 1:
+            #   On est dans les refus
+            if (perm[3] & 2) and niveau_max > 1:
+                #   Ecriture interdite...
+                #   Et comme on peut avoir plusieurs ACE de refus successifs on va pas
+                #   remonter le niveau.
+                print('(perm[3] & 2) and niveau_max > 1')
+                niveau_max = 1
+
+            if perm[3] & 1:
+                #   Lecture interdite. En toute rigueur lecture interdite + écriture autorisée
+                #   l'utilisateur peut créer un nouveau fichier.
+                #   Mais on a dit qu'on restait dans la simplicité.
+                print('(perm[3] & 1)')
+                niveau_max = 0
+                break
+                #   Pas la peine de continuer, il a aucun accès.
+
+        else:
+            #   On traite les autorisations
+            for i in range(1, 3):
+                if perm[3] & i >= niveau_max > niveau:
+                    print('i = %s, perm[3] & i = %s' % (i, (perm[3] & i)))
+                    niveau = perm[3] & i
+
+        print('Niveau : %s' % niveau)
+        if niveau >= niveau_max:
+            break
+
+    return [niveau]
+
 #   -----------------------------------------------------------------------
