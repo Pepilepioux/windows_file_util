@@ -106,15 +106,14 @@ class UserInfo:
                 else:
                     dict[u] = [g[0]]
 
-        # Une horrible verrue est nécessaire :
-        # pour microsoft tous les utilisateurs appartiennent au groupe... "Tout le monde" (!), mais
-        # ce groupe n'apparaît pas dans la liste renvoyée par win32net.NetGroupEnum.
-        # Il faut donc le rajouter à la main.
         for u in dict:
-            dict[u].sort()
-            # Parce que je suis maniaque, et pour une meilleure lisibilité humaine au besoin
             dict[u].append('tout le monde')
-            #   Faudra voir comment ça marche dans les autres langues...
+
+            if 'domain users' in dict[u]:
+                dict[u].append('utilisateurs')
+
+            # Parce que je suis maniaque, et pour une meilleure lisibilité humaine au besoin
+            dict[u].sort()
 
         return dict
 

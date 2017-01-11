@@ -235,7 +235,7 @@ def get_user_s_perm(file, user, user_info):
         else:
             #   On traite les autorisations
             for i in range(1, 3):
-                if perm[3] & i >= niveau_max > niveau:
+                if niveau < perm[3] & i <= niveau_max:
                     niveau = perm[3] & i
 
         if niveau >= niveau_max:
