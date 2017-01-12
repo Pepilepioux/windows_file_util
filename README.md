@@ -12,7 +12,7 @@ Retrieves users and groups information from a windows server
 
 ### fichiers_permissions_liste
 
-Will walk a directory tree and for each subdirectory lists the access permissions.
+Walks a directory tree and for each subdirectory lists the access permissions.
 
 Optionally also lists files permissions.
 
@@ -20,8 +20,13 @@ Outputs 2 files, one (.txt) humanly legible, and one (.csv) intended for postpro
 
 ### fichiers_permissions_suppression
 
-Will walk a directory tree and for each subdirectory and all files within it remove the access permissions of
-the uses, the list of which is given as an argument
+Walks a directory tree and for each subdirectory and all files within it removes the access permissions of
+the users, the list of which is given as an argument
+
+### fichiers_permissions_par_user
+
+Walks a directory tree and for each file and subdirectory prints the higher authorization level (R or W) granted
+to the user givent as an argument. No output if use has no access.
 
 ### surveillance_espace_disque
 
