@@ -26,7 +26,7 @@ the users, the list of which is given as an argument
 ### fichiers_permissions_par_user
 
 Walks a directory tree and for each file and subdirectory prints the higher authorization level (R or W) granted
-to the user givent as an argument. No output if use has no access.
+to the user passed as an argument. No output if use has no access.
 
 ### surveillance_espace_disque
 
