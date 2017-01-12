@@ -28,6 +28,9 @@
     L'argument -f, --fichiers, indique qu'on veut aussi afficher les permissions des fichiers.
     Par défaut on ne traite que les répertoires.
 
+    L'argument -a, --all, indique qu'on veut aussi afficher les permissions des groupes système comme
+    les administrateurs qui ont par définition un contrôle total partout.
+
     Historique :
 
     Version 1.1 2017-01-04
@@ -45,6 +48,12 @@
     Version 1.2 2017-01-12
         Si on ne donne pas de fichier en sortie on affiche sur le stdout.
 
+        Amélioration de la présentation.
+
+        Par défaut on n'affiche pas les groupes d'administration ni le système qui ont un contrôle total
+        partout. Cette liste est définie en dur en début de programme
+        Si on veut vraiment les afficher il faut utiliser l'argument -a, --all.
+
 """
 
 import argparse
@@ -54,6 +63,7 @@ import gipkofileinfo
 
 VERSION = '1.2'
 fic_sortie = None
+LISTE_ADMINS = ['administrateurs de l\'entreprise', 'administrateurs du schéma', 'public folder management', 'domain admins', 'administrateurs', 'système']
 
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -69,6 +79,7 @@ def LireParametres():
     parser = argparse.ArgumentParser(description='Liste des permissions sur les répertoires')
     parser.add_argument('--exclude', '-e', action='store', help='Utilisateurs à exclure de l\'affichage', default='')
     parser.add_argument('--output', '-o', action='store', help='Nom de base des fichiers en sortie')
+    parser.add_argument('--all', '-a', action='count', help='Affiche aussi les groupes d\'administration (Par défaut ils sont exclus)')
     parser.add_argument('--niveau', '-n', type=int, action='store', help='nombre de niveaux maximal à afficher')
     parser.add_argument('--fichiers', '-f', action='count', help='Afficher AUSSI les permissions des fichiers')
     parser.add_argument('nomRepBase', default=os.path.realpath('.'), action='store', help='Nom du répertoire à examiner', nargs='?')
@@ -80,11 +91,16 @@ def LireParametres():
 
     liste_exclusions = [e.strip().lower() for e in args.exclude.split(',') if e != '']
 
+    if args.all is None:
+        liste_exclusions += LISTE_ADMINS
+
     return args.nomRepBase, args.niveau, args.output, liste_exclusions, args.fichiers
 
 
 # ------------------------------------------------------------------------------------
 def output(ligne):
+    global fic_sortie
+
     if fic_sortie:
         fic_sortie[0].write(ligne)
     else:
@@ -92,232 +108,243 @@ def output(ligne):
 
 
 # ------------------------------------------------------------------------------------
+def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi):
+    global fic_sortie
 
+    if nomRepBase[-1] != '\\':
+        nomRepBase += '\\'
 
-nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi = LireParametres()
-
-if nomRepBase[-1] != '\\':
-    nomRepBase += '\\'
-
-if niveaumax:
-    niveaumax += nomRepBase.count('\\') - 1
-
-if nom_base_sorties is not None:
-    nomFicSortie = [nom_base_sorties + '.txt', nom_base_sorties + '.csv', nom_base_sorties + '.err']
-else:
-    nomFicSortie = None
-
-liste_dirs = [[nomRepBase, gipkofileinfo.get_owner(nomRepBase), gipkofileinfo.get_perm(nomRepBase)]]
-#   Parce que dans le "walk" il n'est pas renvoyé lui-même...
-
-liste_fics = {}
-
-lgmax = 0
-nb = 0
-etapes = '\\|/-'
-
-"""
-    Premier passage : on ramène en vrac toutes les infos
-"""
-for D, dirs, fics in os.walk(nomRepBase):
-    sys.stdout.write('\r\t%s' % etapes[nb % 4])
     if niveaumax:
-        niveau = D.count('\\')
-        if niveau >= niveaumax:
-            continue
+        niveaumax += nomRepBase.count('\\') - 1
 
-    for dir in dirs:
-        nomComplet = os.path.join(D, dir)
-        niveau = nomComplet.count('\\')
+    if nom_base_sorties is not None:
+        nomFicSortie = [nom_base_sorties + '.txt', nom_base_sorties + '.csv', nom_base_sorties + '.err']
+    else:
+        nomFicSortie = None
 
+    liste_dirs = [[nomRepBase, gipkofileinfo.get_owner(nomRepBase), gipkofileinfo.get_perm(nomRepBase)]]
+    #   Parce que dans le "walk" il n'est pas renvoyé lui-même...
+    liste_fics = {}
+
+    lgmax1 = len(nomRepBase)
+    #   lgmax1 : longueur du plus long nom de répertoire.
+    lgmax2 = 25
+    #   lgmax2 : longueur du plus long nom de groupe. Utilisés pour faire une belle présentation
+    #   lgmax2 en dur pour pas surcharger la bête en moulinant sur tous les groupes qu'on va rencontrer
+
+    nb = 0
+    etapes = '\\|/-'
+
+    """
+        Premier passage : on ramène en vrac toutes les infos
+    """
+    for D, dirs, fics in os.walk(nomRepBase):
         sys.stdout.write('\r\t%s' % etapes[nb % 4])
-        nb += 1
+        if niveaumax:
+            niveau = D.count('\\')
+            if niveau >= niveaumax:
+                continue
 
-        if len(nomComplet) > lgmax:
-            lgmax = len(nomComplet)
-            nomlepluslong = nomComplet
-
-        liste_dirs.append([nomComplet, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
-
-    if fichiers_aussi:
-        liste_fics[D] = []
-        for fic in fics:
-            nomComplet = os.path.join(D, fic)
+        for dir in dirs:
+            nomComplet = os.path.join(D, dir)
+            niveau = nomComplet.count('\\')
 
             sys.stdout.write('\r\t%s' % etapes[nb % 4])
             nb += 1
 
-            liste_fics[D].append([fic, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
+            if len(nomComplet) > lgmax1:
+                lgmax1 = len(nomComplet)
+                nomlepluslong = nomComplet
 
+            liste_dirs.append([nomComplet, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
 
-"""
-    Pour faire plus propre on trie tout ça
-"""
-liste_dirs.sort()
+        if fichiers_aussi:
+            liste_fics[D] = []
+            for fic in fics:
+                nomComplet = os.path.join(D, fic)
 
-lgmax += 5
-chaineformat = '\n{0: <%s} {1}\n' % lgmax
+                sys.stdout.write('\r\t%s' % etapes[nb % 4])
+                nb += 1
 
-if nomFicSortie:
-    fic_sortie = []
-    for i in range(len(nomFicSortie)):
-        fic_sortie.append(open(nomFicSortie[i], 'w'))
+                liste_fics[D].append([fic, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
 
-if fichiers_aussi:
-    # Version 1.1 2017-01-04
-    # output('\n-------------------------------------')
-    ligne_separateur = '\n-------------------------------------'
-else:
-    ligne_separateur = ''
-    # Fin
-
-"""
-    Et c'est parti pour la mise en forme des informations.
-"""
-for dir in liste_dirs:
     """
-        Version 1.1 2017-01-04
-        output(chaineformat.format(dir[0], dir[1]))
-
-        On n'écrit plus directement la ligne contenant le nom du répertoire, on la prépare
-        et on ne l'écrira que si c'est nécessaire, c'est à dire s'il y a une ligne de droits utilisateur
-        à écrire
-
-        dir[0] : nom du répertoire
-        dir[1] : propriétaire du répertoire
-        dir[2] : liste des utilisateurs avec pour chacun la liste de ses droits
+        Pour faire plus propre on trie tout ça
     """
-    ligne_nom_repertoire = chaineformat.format(dir[0], dir[1])
-    # Fin
+    liste_dirs.sort()
 
-    for e in dir[2]:
-        if e[0].lower() in liste_exclusions:
-            continue
+    lgmax1 += 5
+    chaineformat1 = '\n{0: <%s} {1}\n' % lgmax1  # La ligne "Répertoire"
+    chaineformat2 = '        {0: <%s} {1} {2}\n' % lgmax2  # La ligne "Permissions du répertoire"
+    chaineformat3 = '\n    {0}\n'  # La ligne "Fichier"
+    chaineformat4 = '            {0: <%s} {1: <20} {2}\n' % lgmax2  # La ligne "Permissions du fichier"
 
-        # Version 1.1 2017-01-04
-        if ligne_nom_repertoire:
-            if ligne_separateur:
-                output(ligne_separateur)
-
-            try:
-                output(ligne_nom_repertoire)
-            except Exception as excpt:
-                texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
-                output(texte_remplacement)
-                if fic_sortie:
-                    fic_sortie[2].write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
-
-            ligne_nom_repertoire = ''
-        # Fin Version 1.1 2017-01-04
-
-        output('\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
-
-        if fic_sortie:
-            sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
-            nb += 1
-
-        try:
-            if fic_sortie:
-                fic_sortie[1].write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
-        except Exception as excpt:
-            texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
-            if fic_sortie:
-                fic_sortie[1].write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(texte_remplacement, dir[1], e[0], e[1], e[2]))
-
-        if e[0][:6] == 'PySID:':
-            try:
-                if fic_sortie:
-                    fic_sortie[2].write('Erreur utilisateur {0} dans {1}\n'.format(e[0], dir[0]))
-            except Exception as excpt:
-                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
-                if fic_sortie:
-                    fic_sortie[2].write('Erreur utilisateur {0} dans {1}\n'.format(e[0], texte_remplacement))
-
-        if dir[1][:6] == 'PySID:':
-            try:
-                if fic_sortie:
-                    fic_sortie[2].write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], dir[0]))
-            except Exception as excpt:
-                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
-                if fic_sortie:
-                    fic_sortie[2].write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], texte_remplacement))
+    if fic_sortie is None and nomFicSortie:
+        fic_sortie = []
+        for i in range(len(nomFicSortie)):
+            fic_sortie.append(open(nomFicSortie[i], 'w'))
 
     if fichiers_aussi:
-        try:
-            #   Dans la liste des répertoires certains (au niveau de profondeur maximum spécifié)
-            #   n'ont pas été parcourus à la recherche des fichiers. La clé correspondante n'existe
-            #   pas. Donc on plante...
-            for f in liste_fics[dir[0]]:
-                """
-                    Version 1.1 2017-01-04
-                    output('\n')
-                    output('\t\t{0: <20}\n'.format(f[0]))
+        # Version 1.1 2017-01-04
+        # output('\n-------------------------------------')
+        ligne_separateur = '\n-------------------------------------'
+    else:
+        ligne_separateur = ''
+        # Fin
 
-                    Idem répertoire plus haut
-                """
+    """
+        Et c'est parti pour la mise en forme des informations.
+    """
+    for dir in liste_dirs:
+        """
+            Version 1.1 2017-01-04
+            output(chaineformat1.format(dir[0], dir[1]))
 
-                ligne_nom_fichier = '\n\t\t{0: <20}\n'.format(f[0])
+            On n'écrit plus directement la ligne contenant le nom du répertoire, on la prépare
+            et on ne l'écrira que si c'est nécessaire, c'est à dire s'il y a une ligne de droits utilisateur
+            à écrire
 
-                # Fin Version 1.1 2017-01-04
+            dir[0] : nom du répertoire
+            dir[1] : propriétaire du répertoire
+            dir[2] : liste des utilisateurs avec pour chacun la liste de ses droits
+        """
+        ligne_nom_repertoire = chaineformat1.format(dir[0], dir[1])
+        # Fin
 
-                for e in f[2]:
-                    if e[0].lower() in liste_exclusions:
-                        continue
+        for e in dir[2]:
+            if e[0].lower() in liste_exclusions:
+                continue
 
-                    if ligne_nom_repertoire:
-                        if ligne_separateur:
-                            output(ligne_separateur)
+            # Version 1.1 2017-01-04
+            if ligne_nom_repertoire:
+                if ligne_separateur:
+                    output(ligne_separateur)
 
-                        try:
-                            output(ligne_nom_repertoire)
-                        except Exception as excpt:
-                            texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
-                            output(texte_remplacement)
-                            if fic_sortie:
-                                fic_sortie[2].write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
-
-                        ligne_nom_repertoire = ''
-
-                    if ligne_nom_fichier:
-                        try:
-                            output(ligne_nom_fichier)
-                        except Exception as excpt:
-                            texte_remplacement = ''.join([ligne_nom_fichier[i] if ord(ligne_nom_fichier[i]) < 255 else '¶' for i in range(len(ligne_nom_fichier))])
-                            output(texte_remplacement)
-                            if fic_sortie:
-                                fic_sortie[2].write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
-
-                        ligne_nom_fichier = ''
-
+                try:
+                    output(ligne_nom_repertoire)
+                except Exception as excpt:
+                    texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
+                    output(texte_remplacement)
                     if fic_sortie:
-                        sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
-                        nb += 1
+                        fic_sortie[2].write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
 
-                    # Là on ne traite que de l'ascii, y'a pas de problème
-                    output('\t\t\t{0: <20} {1} {2}\n'.format(e[0], e[1], e[2]))
+                ligne_nom_repertoire = ''
+            # Fin Version 1.1 2017-01-04
 
-                    try:
+            output(chaineformat2.format(e[0][:lgmax2], e[1], e[2]))
+
+            if fic_sortie:
+                sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
+                nb += 1
+
+            try:
+                if fic_sortie:
+                    fic_sortie[1].write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(dir[0], dir[1], e[0], e[1], e[2]))
+            except Exception as excpt:
+                texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
+                if fic_sortie:
+                    fic_sortie[1].write('{0}\t{1}\t\t{2}\t{3}\t{4}\n'.format(texte_remplacement, dir[1], e[0], e[1], e[2]))
+
+            if e[0][:6] == 'PySID:':
+                try:
+                    if fic_sortie:
+                        fic_sortie[2].write('Erreur utilisateur {0} dans {1}\n'.format(e[0], dir[0]))
+                except Exception as excpt:
+                    texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
+                    if fic_sortie:
+                        fic_sortie[2].write('Erreur utilisateur {0} dans {1}\n'.format(e[0], texte_remplacement))
+
+            if dir[1][:6] == 'PySID:':
+                try:
+                    if fic_sortie:
+                        fic_sortie[2].write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], dir[0]))
+                except Exception as excpt:
+                    texte_remplacement = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
+                    if fic_sortie:
+                        fic_sortie[2].write('Erreur propriétaire {0} dans {1}\n'.format(dir[1], texte_remplacement))
+
+        if fichiers_aussi:
+            try:
+                #   Dans la liste des répertoires certains (au niveau de profondeur maximum spécifié)
+                #   n'ont pas été parcourus à la recherche des fichiers. La clé correspondante n'existe
+                #   pas. Donc on plante...
+                for f in liste_fics[dir[0]]:
+                    """
+                        Version 1.1 2017-01-04
+                        output('\n')
+                        output('\t\t{0: <20}\n'.format(f[0]))
+
+                        Idem répertoire plus haut
+                    """
+
+                    #   ligne_nom_fichier = '\n\t\t{0: <20}\n'.format(f[0])
+                    ligne_nom_fichier = chaineformat3.format(f[0])
+
+                    # Fin Version 1.1 2017-01-04
+
+                    for e in f[2]:
+                        if e[0].lower() in liste_exclusions:
+                            continue
+
+                        if ligne_nom_repertoire:
+                            if ligne_separateur:
+                                output(ligne_separateur)
+
+                            try:
+                                output(ligne_nom_repertoire)
+                            except Exception as excpt:
+                                texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
+                                output(texte_remplacement)
+                                if fic_sortie:
+                                    fic_sortie[2].write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
+
+                            ligne_nom_repertoire = ''
+
+                        if ligne_nom_fichier:
+                            try:
+                                output(ligne_nom_fichier)
+                            except Exception as excpt:
+                                texte_remplacement = ''.join([ligne_nom_fichier[i] if ord(ligne_nom_fichier[i]) < 255 else '¶' for i in range(len(ligne_nom_fichier))])
+                                output(texte_remplacement)
+                                if fic_sortie:
+                                    fic_sortie[2].write('{1} : Erreur, {0}\n'.format(excpt, texte_remplacement))
+
+                            ligne_nom_fichier = ''
+
                         if fic_sortie:
-                            fic_sortie[1].write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
-                    except Exception as excpt:
-                        texte_remplacement_d = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
-                        texte_remplacement_f = ''.join([f[0][i] if ord(f[0][i]) < 255 else '¶' for i in range(len(f[0]))])
-                        if fic_sortie:
-                            fic_sortie[1].write('{0}\t\t{1}\t{2}\t{3}\n'.format(texte_remplacement_d, texte_remplacement_f, e[0], e[1], e[2]))
-                        if fic_sortie:
-                            fic_sortie[2].write('{1} , {2} : Erreur, {0}\n'.format(excpt, texte_remplacement_d, texte_remplacement_f))
+                            sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
+                            nb += 1
 
-        except:
-            pass
+                        # Là on ne traite que de l'ascii, y'a pas de problème
+                        output(chaineformat4.format(e[0][:lgmax2], e[1], e[2]))
 
-try:
-    for f in fic_sortie:
-        f.close()
-except:
-    pass
+                        try:
+                            if fic_sortie:
+                                fic_sortie[1].write('{0}\t\t{1}\t{2}\t{3}\n'.format(dir[0], f[0], e[0], e[1], e[2]))
+                        except Exception as excpt:
+                            texte_remplacement_d = ''.join([dir[0][i] if ord(dir[0][i]) < 255 else '¶' for i in range(len(dir[0]))])
+                            texte_remplacement_f = ''.join([f[0][i] if ord(f[0][i]) < 255 else '¶' for i in range(len(f[0]))])
+                            if fic_sortie:
+                                fic_sortie[1].write('{0}\t\t{1}\t{2}\t{3}\n'.format(texte_remplacement_d, texte_remplacement_f, e[0], e[1], e[2]))
+                            if fic_sortie:
+                                fic_sortie[2].write('{1} , {2} : Erreur, {0}\n'.format(excpt, texte_remplacement_d, texte_remplacement_f))
 
-if fic_sortie:
-    print('\n\nListe des permissions de %s inscrite dans %s et %s (erreurs dans %s)' %
-          (nomRepBase, nomFicSortie[0], nomFicSortie[1], nomFicSortie[2]))
+            except:
+                pass
 
-exit()
+    try:
+        for f in fic_sortie:
+            f.close()
+    except:
+        pass
+
+    if fic_sortie:
+        print('\n\nListe des permissions de %s inscrite dans %s et %s (erreurs dans %s)' %
+              (nomRepBase, nomFicSortie[0], nomFicSortie[1], nomFicSortie[2]))
+
+    exit()
+
+# ------------------------------------------------------------------------------------
+if __name__ == '__main__':
+    nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi = LireParametres()
+    liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi)
