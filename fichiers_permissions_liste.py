@@ -54,6 +54,14 @@
         partout. Cette liste est définie en dur en début de programme
         Si on veut vraiment les afficher il faut utiliser l'argument -a, --all.
 
+    Version 1.3 2017-01-13
+        Déplacement du traitement depuis le main dans une fonction liste_permissions. Ainsi cette fonction peut
+        être appelée depuis un autre python. Typiquement pour avoir une liste distincte pour chacun des répertoires
+        de premier niveau d'un disque.
+
+        La fonction liste_permissions renvoie maintenant la liste des utilisateurs et des groupes qu'elle a
+        rencontrés, le but étant que le programme appelant puisse en faire une présentation synthétique.
+
 """
 
 import argparse
@@ -61,7 +69,7 @@ import os
 import sys
 import gipkofileinfo
 
-VERSION = '1.2'
+VERSION = '1.3'
 fic_sortie = None
 LISTE_ADMINS = ['administrateurs de l\'entreprise', 'administrateurs du schéma', 'public folder management', 'domain admins', 'administrateurs', 'système']
 
@@ -108,7 +116,7 @@ def output(ligne):
 
 
 # ------------------------------------------------------------------------------------
-def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi):
+def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi, progression = False):
     global fic_sortie
 
     if nomRepBase[-1] != '\\':
@@ -139,7 +147,9 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
         Premier passage : on ramène en vrac toutes les infos
     """
     for D, dirs, fics in os.walk(nomRepBase):
-        sys.stdout.write('\r\t%s' % etapes[nb % 4])
+        if progression:
+            sys.stdout.write('\r\t%s' % etapes[nb % 4])
+
         if niveaumax:
             niveau = D.count('\\')
             if niveau >= niveaumax:
@@ -149,8 +159,9 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
             nomComplet = os.path.join(D, dir)
             niveau = nomComplet.count('\\')
 
-            sys.stdout.write('\r\t%s' % etapes[nb % 4])
-            nb += 1
+            if progression:
+                sys.stdout.write('\r\t%s' % etapes[nb % 4])
+                nb += 1
 
             if len(nomComplet) > lgmax1:
                 lgmax1 = len(nomComplet)
@@ -163,8 +174,9 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
             for fic in fics:
                 nomComplet = os.path.join(D, fic)
 
-                sys.stdout.write('\r\t%s' % etapes[nb % 4])
-                nb += 1
+                if progression:
+                    sys.stdout.write('\r\t%s' % etapes[nb % 4])
+                    nb += 1
 
                 liste_fics[D].append([fic, gipkofileinfo.get_owner(nomComplet), gipkofileinfo.get_perm(nomComplet)])
 
@@ -233,7 +245,7 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
 
             output(chaineformat2.format(e[0][:lgmax2], e[1], e[2]))
 
-            if fic_sortie:
+            if fic_sortie and progression:
                 sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
                 nb += 1
 
@@ -311,7 +323,7 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
 
                             ligne_nom_fichier = ''
 
-                        if fic_sortie:
+                        if fic_sortie and progression:
                             sys.stdout.write('\r\t\t%s' % etapes[nb % 4])
                             nb += 1
 
@@ -342,9 +354,11 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
         print('\n\nListe des permissions de %s inscrite dans %s et %s (erreurs dans %s)' %
               (nomRepBase, nomFicSortie[0], nomFicSortie[1], nomFicSortie[2]))
 
-    exit()
+    fic_sortie = None
+    #   Comme il est global il faut le remettre dans son état initial sinon au prochain passage il contiendra
+    #   les pointeurs des fichiers précédents, qui sont fermés, et ça plantera.
 
 # ------------------------------------------------------------------------------------
 if __name__ == '__main__':
     nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi = LireParametres()
-    liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi)
+    liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi, progression = True)
