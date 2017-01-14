@@ -18,7 +18,7 @@ class UserInfo:
     """
         Doc à continuer
     """
-    def __init__(self, server):
+    def __init__(self, server = os.environ.get('LOGONSERVER')):
         self.server = server
         self.groups_list = self.__get_groups__()
         self.users_list = self.__get_users__()
