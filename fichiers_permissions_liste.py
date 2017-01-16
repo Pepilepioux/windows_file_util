@@ -59,9 +59,6 @@
         être appelée depuis un autre python. Typiquement pour avoir une liste distincte pour chacun des répertoires
         de premier niveau d'un disque.
 
-        La fonction liste_permissions renvoie maintenant la liste des utilisateurs et des groupes qu'elle a
-        rencontrés, le but étant que le programme appelant puisse en faire une présentation synthétique.
-
 """
 
 import argparse
