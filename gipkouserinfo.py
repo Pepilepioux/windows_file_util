@@ -6,6 +6,12 @@
     Utilisé en complément de gipkofileinfo si par exemple on veut connaître tous
     les droits d'un utilisateur particulier sur une arborescence
 
+    Version 2.0 2017-01-16
+        Dans les listes de groupes on ajoute le descriptif.
+        La liste des groupes devient un dictionnaire, bien plus pratique pour une recherche directe par le nom.
+
+        Attention, microsoft met des caractères à la con en unicode (!) dans certains de ses noms de groupes !
+
 """
 
 import win32net
@@ -18,7 +24,7 @@ class UserInfo:
     """
         Doc à continuer
     """
-    def __init__(self, server = os.environ.get('LOGONSERVER')):
+    def __init__(self, server=os.environ.get('LOGONSERVER')):
         self.server = server
         self.groups_list = self.__get_groups__()
         self.users_list = self.__get_users__()
@@ -29,16 +35,18 @@ class UserInfo:
     #   -------------------------------------------------------------------------------
     def __get_groups__(self):
         """
-            Renvoie la liste des groupes du serveur avec, pour chacun, la liste de ses membres
+            Renvoie un dictionnaire des groupes du serveur avec, pour chacun, la liste de ses membres et
+            le descriptif.
             N.B. On met tous les noms en minuscules pour ne pas être emmerdé quand on voudra faire
             "if nom in liste"
         """
-        groups_list = []
+        groups_list = {}
         resume = 0
         Enr, Total, resume = win32net.NetGroupEnum(self.server, 2, resume, 4096)
         while 1:
             for Champ in Enr:
                 group_name = Champ['name'].lower()
+                group_comment = Champ['comment']
                 members_list = []
                 memberresume = 0
                 memberdata, total, memberresume = win32net.NetGroupGetUsers(self.server, group_name, 1, memberresume)
@@ -53,7 +61,7 @@ class UserInfo:
                     memberdata, total, memberresume = win32net.NetGroupGetUsers(self.server, group_name, 1, memberresume)
 
                 members_list.sort()
-                groups_list.append([group_name, members_list])
+                groups_list[group_name] = [members_list, group_comment]
 
             if resume <= 0:
                 break
@@ -99,12 +107,13 @@ class UserInfo:
         """
         dict = {}
         for g in self.groups_list:
-            # Le premier élément est le nom du groupe, le deuxième la liste des membres.
-            for u in g[1]:
+            # Le nom du groupe est la clé du dictionnaire. La liste des membres est le premier élément de la liste.
+
+            for u in self.groups_list[g][0]:
                 if u in dict:
-                    dict[u].append(g[0])
+                    dict[u].append(g)
                 else:
-                    dict[u] = [g[0]]
+                    dict[u] = [g]
 
         """
             Une horrible verrue est nécessaire :
