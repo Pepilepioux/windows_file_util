@@ -261,7 +261,7 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
     """
 
     if infos_serveur:
-        #   On écrit une synthèse avant le détail. Il faut donc failre la liste de tous
+        #   On écrit une synthèse avant le détail. Il faut donc faire la liste de tous
         #   les utilisateurs et tous les groupes qu'on a pu trouver.
         is_users = [u for u in infos_serveur['users']]
         is_groups = [g for g in infos_serveur['groups']]
@@ -313,7 +313,7 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
 
             output('')
             """
-        output('')
+        output('\n\t-------------------------------------------------------\n\n')
 
     for dir in liste_dirs:
         """
@@ -460,9 +460,9 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
 
 
 # ------------------------------------------------------------------------------------
-def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi, progression=False):
+def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi, progression=False, infos_serveur={}):
     repertoires, fichiers = perm_load(nomRepBase, niveaumax, fichiers_aussi, progression)
-    perm_print(repertoires, fichiers, nom_base_sorties, liste_exclusions)
+    perm_print(repertoires, fichiers, nom_base_sorties, liste_exclusions, infos_serveur)
 
 
 # ------------------------------------------------------------------------------------
