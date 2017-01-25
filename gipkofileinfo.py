@@ -23,6 +23,12 @@
         La version 1 renvoyait les résultats interprétés.
         Comme ça peut être utile la version 2 renvoie AUSSI les résultats bruts en éléments 3, 4 et 5 de la liste
 
+    Version 2.1 2017-01-24
+        La fonction get_perm prend en argument optionnel un dictionnaire contenant deux dictionnaires :
+        "users" et "groups".
+        Si cet argument est renseigné on ajoute au nom d'utilisateur l'information utilisateur ou groupe.
+        Ça permet de trier les permissions et d'afficher les groupes et les utilisateurs individuels séparément.
+
 """
 #
 import win32security
@@ -59,6 +65,8 @@ Typical_perms = {
     1180095: "Add&Read",
     1245631: "Change"
 }
+
+VERSION = '2.1'
 
 
 #   -------------------------------------------------------------------------------
@@ -127,7 +135,7 @@ def get_mask(mask):
 
 
 #   -----------------------------------------------------------------------
-def get_perm(file):
+def get_perm(file, infos_serveur={}):
     perm_list = []
     all_perms = fileperm_get_perms(file)
     for (domain_id, perm) in all_perms.items():
@@ -136,8 +144,21 @@ def get_perm(file):
         sys_id = domain_id.split('\\')[1]
         #   sys_id = str(sys_id)
         mask_name = get_mask(mask)
-        perm_list.append([sys_id.lower(), mask_name, type_perm, perm[0], perm[1][0], perm[1][1]])
-    perm_list.sort()
+        
+        if infos_serveur:
+            if sys_id.lower() in infos_serveur['users']:
+                grp_ou_usr = 'U'
+            else:
+                if sys_id.lower() in infos_serveur['groups']:
+                    grp_ou_usr = 'G'
+                else:
+                    grp_ou_usr = '?'
+        else:
+            grp_ou_usr = ''
+
+        perm_list.append([sys_id.lower(), mask_name, type_perm, perm[0], perm[1][0], perm[1][1], grp_ou_usr])
+
+    perm_list.sort(key=lambda x: [x[6],x[0]])
 
     return perm_list
 

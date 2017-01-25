@@ -12,11 +12,16 @@
 
         Attention, microsoft met des caractères à la con en unicode (!) dans certains de ses noms de groupes !
 
+    Version 2.1 2017-01-25
+        On ajoute manuellement certains noms de groupes et d'utilisateurs (voir explications dans __get_groups__)
+
 """
 
 import win32net
 import win32netcon
 import os
+
+VERSION = '2.1'
 
 
 #   -------------------------------------------------------------------------------
@@ -68,6 +73,23 @@ class UserInfo:
 
             Enr, Total, resume = win32net.NetGroupEnum(self.server, 2, resume, 4096)
 
+        """
+            Cet abruti de microsoft s'obstine à utiliser des alias pour certains noms ("c:/Utilisateurs" par exemple
+            qui est en réalité c:/Users"...).
+            C'est ainsi que le groupe "domain users" est parfois traduit par "utilisateurs".
+            Pour pas être emmerdés on ajoute artificiellement ces noms à la con. (fruit de l'expérience ! Et c'est
+            certainement pas fini. À adapter aussi en fonction de la langue)
+        """
+        try:
+            groups_list['administrateurs'] = groups_list['domain admins']
+        except:
+            pass
+
+        try:
+            groups_list['utilisateurs'] = groups_list['domain users']
+        except:
+            pass
+
         return groups_list
 
     #   -------------------------------------------------------------------------------
@@ -97,6 +119,9 @@ class UserInfo:
                 users_list[Champ['name'].lower()] = [Champ['full_name'], Champ['comment'], Champ['usr_comment'], Champ['user_id']]
 
             Enr, Total, Reprise = win32net.NetUserEnum(self.server, 3, win32netcon.FILTER_NORMAL_ACCOUNT, Reprise, 1)
+
+        if 'système' not in users_list:
+            users_list['système'] = ['Système', 'Système', '', 0]
 
         return users_list
 
