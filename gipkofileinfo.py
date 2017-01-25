@@ -82,8 +82,12 @@ def get_owner(file):
         if win32security is None:
             raise Exception("path.owner requires win32all to be installed")
 
-        desc = win32security.GetFileSecurity(file, win32security.OWNER_SECURITY_INFORMATION)
-        sid = desc.GetSecurityDescriptorOwner()
+        try:
+            desc = win32security.GetFileSecurity(file, win32security.OWNER_SECURITY_INFORMATION)
+            sid = desc.GetSecurityDescriptorOwner()
+        except Exception as e:
+            return '?\\?'
+            
         try:
             account, domain, typecode = win32security.LookupAccountSid(None, sid)
         except:
@@ -101,9 +105,14 @@ def get_owner(file):
 def fileperm_get_perms(file):
     all_perms = {}
     mask = win32security.OWNER_SECURITY_INFORMATION | win32security.GROUP_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION
-    sd = win32security.GetFileSecurity(file, mask)
-    ownersid = sd.GetSecurityDescriptorOwner()
-    dacl = sd.GetSecurityDescriptorDacl()
+    try:
+        sd = win32security.GetFileSecurity(file, mask)
+        ownersid = sd.GetSecurityDescriptorOwner()
+        dacl = sd.GetSecurityDescriptorDacl()
+    except:
+        #   Si l'utilisateur n'a pas les droits nécessaires pour lire les infos ça plante...
+        return {'DCO-FR\\GR_VTB': (0, (0, 0))}
+        
     count = dacl.GetAceCount()
     for i in range(count):
         ace = dacl.GetAce(i)
