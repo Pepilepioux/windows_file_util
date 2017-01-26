@@ -219,4 +219,4 @@ class UserInfo:
         try:
             return self.user_s_groups_list[user.lower()]
         except KeyError:
-            return None
+            return {}
