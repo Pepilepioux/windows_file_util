@@ -87,7 +87,7 @@ def get_owner(file):
             sid = desc.GetSecurityDescriptorOwner()
         except Exception as e:
             return '?\\?'
-            
+
         try:
             account, domain, typecode = win32security.LookupAccountSid(None, sid)
         except:
@@ -112,7 +112,7 @@ def fileperm_get_perms(file):
     except:
         #   Si l'utilisateur n'a pas les droits nécessaires pour lire les infos ça plante...
         return {'DCO-FR\\GR_VTB': (0, (0, 0))}
-        
+
     count = dacl.GetAceCount()
     for i in range(count):
         ace = dacl.GetAce(i)
@@ -153,7 +153,7 @@ def get_perm(file, infos_serveur={}):
         sys_id = domain_id.split('\\')[1]
         #   sys_id = str(sys_id)
         mask_name = get_mask(mask)
-        
+
         if infos_serveur:
             if sys_id.lower() in infos_serveur['users']:
                 grp_ou_usr = 'U'
@@ -167,7 +167,7 @@ def get_perm(file, infos_serveur={}):
 
         perm_list.append([sys_id.lower(), mask_name, type_perm, perm[0], perm[1][0], perm[1][1], grp_ou_usr])
 
-    perm_list.sort(key=lambda x: [x[6],x[0]])
+    perm_list.sort(key=lambda x: [x[6], x[0]])
 
     return perm_list
 
