@@ -280,10 +280,10 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
             #   -   Les droits d'accès
             #   -   et le type, accord ou refus.
             for p in e[2]:
-                if p[0].lower() in is_users and p[0].lower() not in l_users:
+                if p[0].lower() in is_users and p[0].lower() not in l_users and p[0].lower() not in liste_exclusions:
                     l_users.append(p[0].lower())
 
-                if p[0].lower() in is_groups and p[0].lower() not in l_groups:
+                if p[0].lower() in is_groups and p[0].lower() not in l_groups and p[0].lower() not in liste_exclusions:
                     l_groups.append(p[0].lower())
                     if len(p[0].lower()) > lgmax2:
                         lgmax2 = len(p[0].lower())
@@ -291,10 +291,10 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
         if fichiers_aussi:
             for e in liste_fics:
                 for p in e[2]:
-                    if p[0].lower() in is_users and p[0].lower() not in l_users:
+                    if p[0].lower() in is_users and p[0].lower() not in l_users and p[0].lower() not in liste_exclusions:
                         l_users.append(p[0].lower())
 
-                    if p[0].lower() in is_groups and p[0].lower() not in l_groups:
+                    if p[0].lower() in is_groups and p[0].lower() not in l_groups and p[0].lower() not in liste_exclusions:
                         l_groups.append(p[0].lower())
                         if len(p[0].lower()) > lgmax2:
                             lgmax2 = len(p[0].lower())
