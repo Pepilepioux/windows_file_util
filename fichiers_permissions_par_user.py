@@ -122,8 +122,9 @@ if nomFicSortie:
 
 output('\tPermissions de l\'utilisateur %s sur l\'arborescence de %s :\n' % (user, nomRepBase))
 for dir in liste_dirs:
-    ligne_nom_repertoire = chaineformatdir.format(dir[0], PERMISSIONS[dir[1]])
-    output(ligne_nom_repertoire)
+    if dir[1] in PERMISSIONS:
+        ligne_nom_repertoire = chaineformatdir.format(dir[0], PERMISSIONS[dir[1]])
+        output(ligne_nom_repertoire)
 
     for f in liste_fics[dir[0]]:
         ligne_nom_fichier = chaineformatfic.format(f[0], PERMISSIONS[f[1]])
