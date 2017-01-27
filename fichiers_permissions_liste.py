@@ -61,14 +61,21 @@
 
         Ajout d'une synthèse optionnelle imprimant en tête la liste des utilisateurs et groupes présents dans l'arborescence
 
+    Version 1.4 2017-01-27
+        Amélioré le traitement d'erreur dans le "if fichiers_aussi" :
+        le KeyError est normal, donc except = continue.
+        Si on a une autre exception on la loggue
+
 """
 
 import argparse
 import os
 import sys
+import logging
+import traceback
 import gipkofileinfo
 
-VERSION = '1.3'
+VERSION = '1.4'
 fic_sortie = None
 LISTE_ADMINS = ['administrateurs de l\'entreprise', 'administrateurs du schéma', 'public folder management', 'domain admins', 'administrateurs', 'système']
 
@@ -201,7 +208,6 @@ def users_et_groupes(liste_dirs, liste_fics, ad):
             liste_users[nom] = '%s - %s' % (liste_users_serveur[nom][0], liste_users_serveur[nom][1])
         else:
             if nom in liste_groupes_serveur:
-                print('%s est un groupe' % nom)
                 liste_groupes[nom] = liste_groupes_serveur[nom]
 
     return liste_users, liste_groupes
@@ -216,6 +222,7 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
         et des groupes rencontrés dans le traitement
     """
     global fic_sortie
+    logger = logging.getLogger()
 
     lgmax1 = 0
     #   lgmax1 : longueur du plus long nom de répertoire.
@@ -223,15 +230,8 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
     #   lgmax2 : longueur du plus long nom de groupe. Utilisés pour faire une belle présentation
     #   lgmax2 en dur pour pas surcharger la bête en moulinant sur tous les groupes qu'on va rencontrer
 
-    if liste_fics:
-        fichiers_aussi = True
-    else:
-        fichiers_aussi = False
-
-    if nom_base_sorties is not None:
-        nomFicSortie = [nom_base_sorties + '.txt', nom_base_sorties + '.csv', nom_base_sorties + '.err']
-    else:
-        nomFicSortie = None
+    fichiers_aussi = True if liste_fics else False
+    nomFicSortie = [nom_base_sorties + '.txt', nom_base_sorties + '.csv', nom_base_sorties + '.err'] if nom_base_sorties is not None else None
 
     for e in liste_dirs:
         if len(e[0]) > lgmax1:
@@ -248,13 +248,7 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
         for i in range(len(nomFicSortie)):
             fic_sortie.append(open(nomFicSortie[i], 'w'))
 
-    if fichiers_aussi:
-        # Version 1.1 2017-01-04
-        # output('\n-------------------------------------')
-        ligne_separateur = '\n-------------------------------------'
-    else:
-        ligne_separateur = ''
-        # Fin
+    ligne_separateur = '\n-------------------------------------' if fichiers_aussi else ''
 
     """
         Et c'est parti pour la mise en forme des informations.
@@ -317,10 +311,7 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
 
     for dir in liste_dirs:
         """
-            Version 1.1 2017-01-04
-            output(chaineformat1.format(dir[0], dir[1]))
-
-            On n'écrit plus directement la ligne contenant le nom du répertoire, on la prépare
+            On n'écrit pas directement la ligne contenant le nom du répertoire, on la prépare
             et on ne l'écrira que si c'est nécessaire, c'est à dire s'il y a une ligne de droits utilisateur
             à écrire
 
@@ -396,18 +387,8 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
                 #   pas. Donc on plante...
                 g_ou_u_precedent = ''
                 for f in liste_fics[dir[0]]:
-                    """
-                        Version 1.1 2017-01-04
-                        output('\n')
-                        output('\t\t{0: <20}\n'.format(f[0]))
-
-                        Idem répertoire plus haut
-                    """
-
-                    #   ligne_nom_fichier = '\n\t\t{0: <20}\n'.format(f[0])
+                    # Idem répertoire plus haut : on prépare la ligne et on l'imprimera uniquement si c'est nécessaire
                     ligne_nom_fichier = chaineformat3.format(f[0])
-
-                    # Fin Version 1.1 2017-01-04
 
                     for e in f[2]:
                         if e[0].lower() in liste_exclusions:
@@ -461,16 +442,18 @@ def perm_print(liste_dirs, liste_fics, nom_base_sorties, liste_exclusions, infos
                             if fic_sortie:
                                 fic_sortie[2].write('{1} , {2} : Erreur, {0}\n'.format(excpt, texte_remplacement_d, texte_remplacement_f))
 
-            except:
-                pass
+            except KeyError as excpt:
+                continue
 
-    try:
-        for f in fic_sortie:
-            f.close()
-    except:
-        pass
+            except Exception as excpt:
+                logger.error('Erreur: %s' % traceback.format_exc())
 
     if fic_sortie:
+        for f in fic_sortie:
+            try:
+                f.close()
+            except:
+                pass
         print('\n\nListe des permissions de %s inscrite dans %s et %s (erreurs dans %s)' %
               (liste_dirs[0][0], nomFicSortie[0], nomFicSortie[1], nomFicSortie[2]))
 
