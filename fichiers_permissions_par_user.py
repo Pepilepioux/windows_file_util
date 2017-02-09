@@ -9,6 +9,12 @@
 
     L'argument -o, --output, donne le nom du fichier résultat.
 
+    Version 1.1 2017-02-09
+        Ajout d'un argument "--fichiers" pour afficher aussi les fichiers. C'était le défaut avant, mais l'expérience
+        montre que parfois ça fait trop.
+
+        (Expérience encore...) on traite l'erreur d'écriture des caractères à la con... euh, pardon, unicodes exotiques.
+
 """
 
 import argparse
@@ -17,7 +23,7 @@ import sys
 import gipkofileinfo
 import gipkouserinfo
 
-VERSION = '1.0'
+VERSION = '1.1'
 fic_sortie = None
 PERMISSIONS = {1: 'Lecture', 2: '        Écriture'}
 #   Des espaces pour un meilleur contraste visuel.
@@ -36,6 +42,7 @@ def LireParametres():
     parser = argparse.ArgumentParser(description='Liste des permissions par utilisateur')
     parser.add_argument('--output', '-o', action='store', help='Nom de base des fichiers en sortie')
     parser.add_argument('--user', '-u', action='store', help='Utilisateur à tester')
+    parser.add_argument('--fichiers', '-f', action='count', help='Afficher AUSSI les permissions des fichiers')
     parser.add_argument('--serveur', '-s', action='store', help='Serveur d\'authentification', default=os.environ.get('LOGONSERVER'))
     parser.add_argument('nomRepBase', default=os.path.realpath('.'), action='store', help='Nom du répertoire à examiner', nargs='?')
     args = parser.parse_args()
@@ -47,7 +54,7 @@ def LireParametres():
     if args.user is None:
         raise ValueError('L\'argument "utilisateur (-u, --user) est obligatoire')
 
-    return args.nomRepBase, args.user, args.output, args.serveur
+    return args.nomRepBase, args.user, args.output, args.serveur, args.fichiers
 
 
 # ------------------------------------------------------------------------------------
@@ -60,7 +67,7 @@ def output(ligne):
 
 # ------------------------------------------------------------------------------------
 
-nomRepBase, user, nomFicSortie, serveur = LireParametres()
+nomRepBase, user, nomFicSortie, serveur, fichiers_aussi = LireParametres()
 user_info = gipkouserinfo.UserInfo(serveur)
 
 if nomRepBase[-1] != '\\':
@@ -97,16 +104,17 @@ for D, dirs, fics in os.walk(nomRepBase):
             liste_dirs.append([nomComplet, permission[0]])
 
     liste_fics[D] = []
-    for fic in fics:
-        nomComplet = os.path.join(D, fic)
+    if fichiers_aussi:
+        for fic in fics:
+            nomComplet = os.path.join(D, fic)
 
-        # sys.stdout.write('\r\t%s' % etapes[nb % 4])
-        nb += 1
+            # sys.stdout.write('\r\t%s' % etapes[nb % 4])
+            nb += 1
 
-        permission = gipkofileinfo.get_user_s_perm(nomComplet, user, user_info)
-        # print('\tpermission fichier (%s, %s) = %s' % ( nomComplet, user, permission))
-        if permission[0] > 0:
-            liste_fics[D].append([fic, permission[0]])
+            permission = gipkofileinfo.get_user_s_perm(nomComplet, user, user_info)
+            # print('\tpermission fichier (%s, %s) = %s' % ( nomComplet, user, permission))
+            if permission[0] > 0:
+                liste_fics[D].append([fic, permission[0]])
 
 """
     Pour faire plus propre on trie tout ça
@@ -124,11 +132,20 @@ output('\tPermissions de l\'utilisateur %s sur l\'arborescence de %s :\n' % (use
 for dir in liste_dirs:
     if dir[1] in PERMISSIONS:
         ligne_nom_repertoire = chaineformatdir.format(dir[0], PERMISSIONS[dir[1]])
-        output(ligne_nom_repertoire)
+        try:
+            #   Parce qu'il y a toujours des zozos qui mettent des caractères à la con dans leurs noms de fichiers !
+            output(ligne_nom_repertoire)
+        except Exception as excpt:
+            texte_remplacement = ''.join([ligne_nom_repertoire[i] if ord(ligne_nom_repertoire[i]) < 255 else '¶' for i in range(len(ligne_nom_repertoire))])
+            output(texte_remplacement)
 
     for f in liste_fics[dir[0]]:
         ligne_nom_fichier = chaineformatfic.format(f[0], PERMISSIONS[f[1]])
-        output(ligne_nom_fichier)
+        try:
+            output(ligne_nom_fichier)
+        except Exception as excpt:
+            texte_remplacement = ''.join([ligne_nom_fichier[i] if ord(ligne_nom_fichier[i]) < 255 else '¶' for i in range(len(ligne_nom_fichier))])
+            output(texte_remplacement)
 
 if fic_sortie:
     print('\n\nListe des permissions de %s sur %s inscrite dans %s' % (user, nomRepBase, nomFicSortie))
