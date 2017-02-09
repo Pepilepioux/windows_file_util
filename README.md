@@ -38,6 +38,11 @@ The threshold can be a value in Gb, Tb, etc, or a percentage of free space.
 The program will output its results in a log file, and if the disk occupation threshold is exceeded on any disk it will
 send an alert by mail. (mailing parameters also defined in ini file).
 
+### fichiers_permissions_redondances
+
+Points out files and directories where a user is granted twice the same acces rights, with individual permissions and due
+to his group membership.
+
 ## Dependencies
 * python 3 (developed and tested with python 3.4)
 * (some modules) gipkomail available [here] (https://github.com/Pepilepioux/server_stats/)
