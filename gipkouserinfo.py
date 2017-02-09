@@ -86,7 +86,17 @@ class UserInfo:
             pass
 
         try:
+            groups_list['administrators'] = groups_list['domain admins']
+        except:
+            pass
+
+        try:
             groups_list['utilisateurs'] = groups_list['domain users']
+        except:
+            pass
+
+        try:
+            groups_list['users'] = groups_list['domain users']
         except:
             pass
 
