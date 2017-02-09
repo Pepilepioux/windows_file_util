@@ -77,7 +77,8 @@ import gipkofileinfo
 
 VERSION = '1.4'
 fic_sortie = None
-LISTE_ADMINS = ['administrateurs de l\'entreprise', 'administrateurs du schéma', 'public folder management', 'domain admins', 'administrateurs', 'système']
+LISTE_ADMINS = ['administrateurs de l\'entreprise', 'administrateurs du schéma', 'public folder management', 'domain admins',
+                'administrateurs', 'administrators', 'système']
 
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
