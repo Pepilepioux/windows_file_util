@@ -33,6 +33,8 @@
 #
 import win32security
 import os
+import logging
+import traceback
 
 All_perms = {
     1: "ACCESS_READ",  # 0x00000001
@@ -71,6 +73,7 @@ VERSION = '2.1'
 
 #   -------------------------------------------------------------------------------
 def get_owner(file):
+    logger = logging.getLogger()
     r""" Return the name of the owner of this file or directory.
 
     This follows symbolic links.
@@ -103,6 +106,7 @@ def get_owner(file):
 
 #   -----------------------------------------------------------------------
 def fileperm_get_perms(file):
+    logger = logging.getLogger()
     all_perms = {}
     mask = win32security.OWNER_SECURITY_INFORMATION | win32security.GROUP_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION
     try:
@@ -145,6 +149,7 @@ def get_mask(mask):
 
 #   -----------------------------------------------------------------------
 def get_perm(file, infos_serveur={}):
+    logger = logging.getLogger()
     perm_list = []
     all_perms = fileperm_get_perms(file)
     for (domain_id, perm) in all_perms.items():
@@ -183,6 +188,7 @@ def remove_perm(file, *users, verbose=0):
         OU
         remove_perm('file', *('u1', 'u2', ..., 'un'), verbose=x)
     """
+    logger = logging.getLogger()
 
     mask = win32security.OWNER_SECURITY_INFORMATION | win32security.GROUP_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION
     sd = win32security.GetFileSecurity(file, mask)
@@ -196,11 +202,16 @@ def remove_perm(file, *users, verbose=0):
         try:
             user, domain, int = win32security.LookupAccountSid(None, ace[2])
         except:
+            logger.error('Erreur: %s' % traceback.format_exc())
             user = '%s' % ace[2]
 
         if user.lower() in users:
             if verbose:
-                print('On supprime %s pour %s' % (user, file))
+                try:
+                    print('On supprime %s pour %s' % (user, file))
+                except UnicodeEncodeError:
+                    texte_remplacement = ''.join([file[i] if ord(file[i]) < 255 else '¶' for i in range(len(file))])
+                    print('On supprime %s pour %s' % (user, texte_remplacement))
             a_supprimer.append(i)
 
     a_supprimer.reverse()

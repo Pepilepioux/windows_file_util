@@ -24,13 +24,22 @@
 
       --verbose, -v         Affichier le détail des opérations
 
+    Version 1.1 2017-02-09
+        Faut penser à traiter AUSSI le répertoire de base...
+
 """
 
 import argparse
+import configparser
 import os
 import sys
+import logging
+import logging.handlers
+import traceback
 import gipkofileinfo
 import win32security
+
+VERSION = '1.1'
 
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -40,8 +49,19 @@ def LireParametres():
     else:
         Fpgm = os.path.realpath(__file__)
 
-    rep = os.path.dirname(Fpgm)
-    nom = os.path.splitext(os.path.basename(Fpgm))[0]
+    # rep = os.path.dirname(Fpgm)
+    # nom = os.path.splitext(os.path.basename(Fpgm))[0]
+
+    nomFichierIni = os.path.join(os.path.dirname(Fpgm), os.path.splitext(os.path.basename(Fpgm))[0]) + '.ini'
+    nomFichierLog = os.path.join(os.path.dirname(Fpgm), os.path.splitext(os.path.basename(Fpgm))[0]) + '.log'
+
+    config = configparser.RawConfigParser()
+    config.read(nomFichierIni)
+    try:
+        niveauLog = int(config.get('General', 'NiveauLog'))
+    except:
+        niveauLog = logging.INFO
+
 
     parser = argparse.ArgumentParser(description='Suppression des permissions sur les fichiers et répertoires')
 
@@ -63,12 +83,34 @@ def LireParametres():
 
     verbose = args.verbose if args.verbose else 0
 
-    return args.nomRepBase, verbose, liste_users
+    return args.nomRepBase, verbose, liste_users, nomFichierLog, niveauLog
 
 
 #   -----------------------------------------------------------------------
 
-nomRepBase, verbose, liste_users = LireParametres()
+nomRepBase, verbose, liste_users, nomFichierLog, niveauLog = LireParametres()
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+# Voir test100_logger_3_creer_handlers.py pour les différents handlers
+formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
+Handler = logging.handlers.WatchedFileHandler(nomFichierLog)
+Handler.setLevel(niveauLog)
+Handler.setFormatter(formatter)
+Handler.set_name('Normal')
+logger.addHandler(Handler)
+logger.info('Début du programme')
+
+if verbose >= 2:
+    try:
+        #   "Try" parce qu'avec les zozos qui s'obstinnent à mettre des symboles euro
+        #   dans leurs noms de fichiers ça plante...
+        print('\tOn traite %s' % nomRepBase)
+    except Exception as excpt:
+        logger.error('Erreur: %s' % traceback.format_exc())
+
+gipkofileinfo.remove_perm(nomRepBase, *liste_users, verbose=verbose)
 
 for D, dirs, fics in os.walk(nomRepBase):
     for dir in dirs:
@@ -78,14 +120,15 @@ for D, dirs, fics in os.walk(nomRepBase):
                 #   "Try" parce qu'avec les zozos qui s'obstinnent à mettre des symboles euro
                 #   dans leurs noms de fichiers ça plante...
                 print('\tOn traite %s' % nomComplet)
-            except:
-                pass
+            except Exception as excpt:
+                logger.error('Erreur: %s' % traceback.format_exc())
 
         try:
             # Oui, ça plante si un zozo a mis un nom de fichier à rallonge qui fait dépasser la limite windows des 255 caractères...
             # Ça peut aussi planter si un abruti met de l'unicode dans un nom de fichier. Expérience vécue.
             gipkofileinfo.remove_perm(nomComplet, *liste_users, verbose=verbose)
         except Exception as excpt:
+            logger.error('Erreur: %s' % traceback.format_exc())
             tb = None
             texte_remplacement = ''.join([nomComplet[i] if ord(nomComplet[i]) < 255 else '¶' for i in range(len(nomComplet))])
             print('\n%s' % texte_remplacement)
@@ -103,7 +146,10 @@ for D, dirs, fics in os.walk(nomRepBase):
         try:
             gipkofileinfo.remove_perm(nomComplet, *liste_users, verbose=verbose)
         except Exception as excpt:
+            logger.error('Erreur: %s' % traceback.format_exc())
             tb = None
             texte_remplacement = ''.join([nomComplet[i] if ord(nomComplet[i]) < 255 else '¶' for i in range(len(nomComplet))])
             print('\n%s' % texte_remplacement)
             print(excpt.with_traceback(tb))
+
+logger.info('Fin du programme\n')
