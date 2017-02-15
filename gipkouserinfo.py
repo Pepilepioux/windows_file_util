@@ -15,13 +15,34 @@
     Version 2.1 2017-01-25
         On ajoute manuellement certains noms de groupes et d'utilisateurs (voir explications dans __get_groups__)
 
+    Version 2.2 2017-02-15
+        On ajoute les "flags" de l'utilisateur. Ces flags sont :
+        UF_SCRIPT                            1
+        UF_ACCOUNTDISABLE                    2
+        UF_HOMEDIR_REQUIRED                  8
+        UF_LOCKOUT                          16
+        UF_PASSWD_NOTREQD                   32
+        UF_PASSWD_CANT_CHANGE               64
+        UF_TEMP_DUPLICATE_ACCOUNT          256
+        UF_NORMAL_ACCOUNT                  512
+        UF_INTERDOMAIN_TRUST_ACCOUNT      2048
+        UF_WORKSTATION_TRUST_ACCOUNT      4096
+        UF_SERVER_TRUST_ACCOUNT           8192
+        UF_MACHINE_ACCOUNT_MASK          14336
+        UF_ACCOUNT_TYPE_MASK             15104
+        UF_DONT_EXPIRE_PASSWD            65536
+        UF_MNS_LOGON_ACCOUNT            131072
+        UF_SETTABLE_BITS                211835
+
+        On ajoute aussi la méthode "user_disabled". Les autres... On verra au fur et à mesure des besoins
+
 """
 
 import win32net
 import win32netcon
 import os
 
-VERSION = '2.1'
+VERSION = '2.2'
 
 
 #   -------------------------------------------------------------------------------
@@ -126,7 +147,7 @@ class UserInfo:
 
         while Reprise > 0:
             for Champ in Enr:
-                users_list[Champ['name'].lower()] = [Champ['full_name'], Champ['comment'], Champ['usr_comment'], Champ['user_id']]
+                users_list[Champ['name'].lower()] = [Champ['full_name'], Champ['comment'], Champ['usr_comment'], Champ['user_id'], Champ['flags']]
 
             Enr, Total, Reprise = win32net.NetUserEnum(self.server, 3, win32netcon.FILTER_NORMAL_ACCOUNT, Reprise, 1)
 
@@ -230,3 +251,10 @@ class UserInfo:
             return self.user_s_groups_list[user.lower()]
         except KeyError:
             return {}
+
+    #   -------------------------------------------------------------------------------
+    def user_disabled(self, user):
+        try:
+            return(self.users_list[user][4] & win32netcon.UF_ACCOUNTDISABLE)
+        except:
+            return win32netcon.UF_ACCOUNTDISABLE
