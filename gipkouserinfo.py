@@ -36,13 +36,33 @@
 
         On ajoute aussi la méthode "user_disabled". Les autres... On verra au fur et à mesure des besoins
 
+    Version 3.0 2017-02-16
+        Le win32net.NetGroupGetUsers ne renvoie QUE les utilisateurs, pas les groupes !
+        Donc si on veut traiter les groupes imbriqués il faut prendre une autre méthode.
+        J'ai trouvé un truc qui va bien sur
+        http://code.activestate.com/recipes/498096-recursively-look-up-groups-in-active-directory/
+        http://www.sourcecodeonline.com/details/recursively_look_up_groups_in_active_directory.html
+
+        Le get_groups renvoie maintenant pour chaque groupe deux listes de membres :
+        - la liste complète des users, en décortiquant récursivement les sous-groupes, et
+        - une liste "brute" des membres dont chaque élément est une liste contenant le nom
+          du membre et l'indication User/Group
+
 """
 
 import win32net
 import win32netcon
 import os
+import sys
+from win32com.client import *
 
-VERSION = '2.2'
+VERSION = '3.0'
+
+
+def expurge(texte):
+    #   Pour pas être emmerdé aver les noms de fichiers à la con avec d' l'unicode exotique.
+    #   Y'a pourtant des abrutis qui pour la simple apostrophe utilisent 'u\2051'...
+    return ''.join([texte[i] if ord(texte[i]) < 255 else '¶' for i in range(len(texte))])
 
 
 #   -------------------------------------------------------------------------------
@@ -51,16 +71,29 @@ class UserInfo:
         Doc à continuer
     """
     def __init__(self, server=os.environ.get('LOGONSERVER')):
-        self.server = server
+        self.server = server.replace('\\', '')
+
+        #   Version 3.0
+        self.attribs = "name,member,objectClass,adspath,primaryGroupToken,primaryGroupID,description"
+        self.objConnection = Dispatch("ADODB.Connection")
+        self.objConnection.Open("Provider=ADsDSOObject")
+
+        ldap_root = GetObject('LDAP://%s/rootDSE' % self.server)
+        self.dn = ldap_root.Get('defaultNamingContext')
+        self.groups_names = self.__get_groups_names__()
+        #   Fin Version 3.0
+
         self.groups_list = self.__get_groups__()
         self.users_list = self.__get_users__()
         self.user_s_groups_list = self.__get_user_s_groups__()
-
         return
 
     #   -------------------------------------------------------------------------------
-    def __get_groups__(self):
+    def __get_groups_V0__(self):
         """
+
+            Version précédente. Je la garde pour conjurer le mauvais sort
+
             Renvoie un dictionnaire des groupes du serveur avec, pour chacun, la liste de ses membres et
             le descriptif.
             N.B. On met tous les noms en minuscules pour ne pas être emmerdé quand on voudra faire
@@ -88,6 +121,158 @@ class UserInfo:
 
                 members_list.sort()
                 groups_list[group_name] = [members_list, group_comment]
+
+            if resume <= 0:
+                break
+
+            Enr, Total, resume = win32net.NetGroupEnum(self.server, 2, resume, 4096)
+
+        """
+            Cet abruti de microsoft s'obstine à utiliser des alias pour certains noms ("c:/Utilisateurs" par exemple
+            qui est en réalité c:/Users"...).
+            C'est ainsi que le groupe "domain users" est parfois traduit par "utilisateurs".
+            Pour pas être emmerdés on ajoute artificiellement ces noms à la con. (fruit de l'expérience ! Et c'est
+            certainement pas fini. À adapter aussi en fonction de la langue)
+        """
+        try:
+            groups_list['administrateurs'] = groups_list['domain admins']
+        except:
+            pass
+
+        try:
+            groups_list['administrators'] = groups_list['domain admins']
+        except:
+            pass
+
+        try:
+            groups_list['utilisateurs'] = groups_list['domain users']
+        except:
+            pass
+
+        try:
+            groups_list['users'] = groups_list['domain users']
+        except:
+            pass
+
+        return groups_list
+
+    #   -------------------------------------------------------------------------------
+    def __get_primary_group_members__(self, token):
+        """
+
+            Crédit : voir dans la doc d'en-tête à la rubrique "Version 3"
+
+            Used to look up Users whose Primary Group is set to one of the groups we're
+            looking up.  This is necessary as AD uses that attribute to calculate a group's
+            membership.  These type of users do not show up if you query the group's member field
+            directly.
+
+            searchRoot is the part of the LDAP tree that you want to start searching from.
+            token is the groups primaryGroupToken.
+        """
+        strSearch = \
+            "<LDAP://%s>;(primaryGroupID=%d);name;subtree" % \
+            (self.dn, token)
+        objRecordSet = self.objConnection.Execute(strSearch)[0]
+        memberList = []
+
+        # Process if accounts are found.
+        if objRecordSet.RecordCount > 0:
+            objRecordSet.MoveFirst()
+
+            while not objRecordSet.EOF:
+                memberList.append(objRecordSet.Fields[0].Value)
+                # memberList.append("%s%s" % (header, objRecordSet.Fields[0].Value))
+                objRecordSet.MoveNext()
+
+        # Return the list of results
+        return memberList
+
+    #   -------------------------------------------------------------------------------
+    def __get_group_members__(self, group_name, recurse=False):
+        strSearch = \
+            "<LDAP://%s>;(&(objectCategory=%s)(sAMAccountName=%s));%s;subtree" % \
+            (self.dn, 'Group', group_name, self.attribs)
+        objRecordSet = self.objConnection.Execute(strSearch)[0]
+
+        # Normally, we would only expect one object to be retrieved.
+        if objRecordSet.RecordCount == 1:
+            # Set up a dictionary with attribute/value pairs and return the dictionary.
+            for f in objRecordSet.Fields:
+                liste_pg = []
+                if f.Name == 'member':
+                    liste = [cn.split('=')[1].lower() for cn in [e.split(',')[0] for e in f.Value]] if f.Value is not None else []
+                    # break
+
+                if f.Name == 'primaryGroupToken':
+                    liste_pg = self.__get_primary_group_members__(f.Value)
+
+            membres = liste_pg
+            for e in liste:
+                if e in self.groups_names:
+                    if recurse:
+                        membres += self.__get_group_members__(e, recurse)
+                    else:
+                        membres.append([e, 'g'])
+                else:
+                    membres.append([e, 'u'])
+
+            if recurse:
+                membres.sort()
+                for i in range(len(membres) - 1, 1, -1):
+                    if membres[i] == membres[i - 1]:
+                        membres.remove(membres[i])
+
+            else:
+                #   On met les groupes en premier
+                membres.sort(key=lambda x: x[1])
+
+            return membres
+        else:
+            # Group not found
+            return []
+
+    #   -------------------------------------------------------------------------------
+    def __get_groups_names__(self):
+        """
+            Renvoie la liste des noms des groupes du serveur.
+            On a besoin de cette liste simple pour remplir la liste complète des groupes avec leurs membres, dans la
+            recherche récursive des utilisateurs appartenant indirectement au groupe.
+        """
+        groups_names = []
+        resume = 0
+        Enr, Total, resume = win32net.NetGroupEnum(self.server, 2, resume, 4096)
+        while 1:
+            for Champ in Enr:
+                groups_names.append(Champ['name'].lower())
+
+            if resume <= 0:
+                break
+
+            Enr, Total, resume = win32net.NetGroupEnum(self.server, 2, resume, 4096)
+
+        return groups_names
+
+    #   -------------------------------------------------------------------------------
+    def __get_groups__(self):
+        """
+            Renvoie un dictionnaire des groupes du serveur avec, pour chacun, la liste de ses membres et
+            le descriptif.
+            N.B. On met tous les noms en minuscules pour ne pas être emmerdé quand on voudra faire
+            "if nom in liste"
+        """
+        groups_list = {}
+        resume = 0
+        Enr, Total, resume = win32net.NetGroupEnum(self.server, 2, resume, 4096)
+        while 1:
+            for Champ in Enr:
+                group_name = Champ['name'].lower()
+                group_comment = Champ['comment']
+
+                # members_list = self.__get_group_members__(group_name)
+                users_list = [e[0] for e in self.__get_group_members__(group_name, True)]
+                members_list = [e for e in self.__get_group_members__(group_name, False)]
+                groups_list[group_name] = [users_list, group_comment, members_list]
 
             if resume <= 0:
                 break
@@ -152,7 +337,7 @@ class UserInfo:
             Enr, Total, Reprise = win32net.NetUserEnum(self.server, 3, win32netcon.FILTER_NORMAL_ACCOUNT, Reprise, 1)
 
         if 'système' not in users_list:
-            users_list['système'] = ['Système', 'Système', '', 0]
+            users_list['système'] = ['Système', 'Système', '', 0, 4260353]
 
         return users_list
 
