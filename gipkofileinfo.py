@@ -29,6 +29,9 @@
         Si cet argument est renseigné on ajoute au nom d'utilisateur l'information utilisateur ou groupe.
         Ça permet de trier les permissions et d'afficher les groupes et les utilisateurs individuels séparément.
 
+    Version 2.2 2017-02-21
+        Ajouté la fonction add_perm.
+
 """
 #
 import win32security
@@ -68,7 +71,11 @@ Typical_perms = {
     1245631: "Change"
 }
 
-VERSION = '2.1'
+FULL_CONTROL = 2032127
+READ = 1179817
+CHANGE = 1245631
+
+VERSION = '2.2'
 
 
 #   -------------------------------------------------------------------------------
@@ -222,6 +229,37 @@ def remove_perm(file, *users, verbose=0):
     if a_supprimer:
         sd.SetSecurityDescriptorDacl(1, dacl, 0)   # may not be necessary
         win32security.SetFileSecurity(file, win32security.DACL_SECURITY_INFORMATION, sd)
+
+
+#   -----------------------------------------------------------------------
+def add_perm(file, permission, *users):
+    """
+
+        ATTENTION : expérimental. Peut mettre le bordel dans les héritages.
+
+        Inspiré de http://stackoverflow.com/questions/28302666/impersonation-for-windows-in-python-3-using-win32security
+        Syntaxe :
+        add_perm('file', permission, 'u1', 'u2', ..., 'un')
+        OU
+        add_perm('file', permission, *['u1', 'u2', ..., 'un'])
+        OU
+        add_perm('file', permission, *('u1', 'u2', ..., 'un'))
+    """
+    logger = logging.getLogger()
+
+    mask = win32security.OWNER_SECURITY_INFORMATION | win32security.GROUP_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION
+    sd = win32security.GetFileSecurity(file, mask)
+    ownersid = sd.GetSecurityDescriptorOwner()
+    dacl = sd.GetSecurityDescriptorDacl()
+    heritage = win32security.OBJECT_INHERIT_ACE | win32security.CONTAINER_INHERIT_ACE | win32security.INHERITED_ACE
+
+    for u in users:
+        sid, domain, type = win32security.LookupAccountName ('', u)
+        dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION, heritage, permission, sid)
+
+    sd.SetSecurityDescriptorDacl(1, dacl, 0)
+
+    win32security.SetFileSecurity(file, win32security.DACL_SECURITY_INFORMATION,sd)
 
 
 #   -----------------------------------------------------------------------
