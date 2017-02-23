@@ -48,21 +48,19 @@
         - une liste "brute" des membres dont chaque élément est une liste contenant le nom
           du membre et l'indication User/Group
 
+    Version 3.1 2017-02-22
+        Ajouté une liste des SID par utilisateur.
+
 """
 
 import win32net
 import win32netcon
 import os
 import sys
+import win32security
 from win32com.client import *
 
-VERSION = '3.0'
-
-
-def expurge(texte):
-    #   Pour pas être emmerdé aver les noms de fichiers à la con avec d' l'unicode exotique.
-    #   Y'a pourtant des abrutis qui pour la simple apostrophe utilisent 'u\2051'...
-    return ''.join([texte[i] if ord(texte[i]) < 255 else '¶' for i in range(len(texte))])
+VERSION = '3.1'
 
 
 #   -------------------------------------------------------------------------------
@@ -86,6 +84,7 @@ class UserInfo:
         self.groups_list = self.__get_groups__()
         self.users_list = self.__get_users__()
         self.user_s_groups_list = self.__get_user_s_groups__()
+        self.sids_list = self.__get_sids__()
         return
 
     #   -------------------------------------------------------------------------------
@@ -342,6 +341,29 @@ class UserInfo:
         return users_list
 
     #   -------------------------------------------------------------------------------
+    def __get_sids__(self):
+        """
+            Renvoie un dictionnaire des sid par utilisateur.
+        """
+        sids_list = {}
+        for u in self.users_list:
+            try:
+                sid, D, T = win32security.LookupAccountName('', u)
+                sids_list[u] = sid
+            except:
+                pass
+
+        for g in self.groups_list:
+            try:
+                sid, D, T = win32security.LookupAccountName('', g)
+                sids_list[g] = sid
+            except:
+                #   Certains groupes, comme ceux qui ont été traduits, ne seront pas trouvés.
+                pass
+
+        return sids_list
+
+    #   -------------------------------------------------------------------------------
     def __get_user_s_groups__(self):
         """
             Renvoie un dictionnaire contenant pour chaque utilisateur la liste des groupes auxquel il appartient.
@@ -425,6 +447,10 @@ class UserInfo:
     #   -------------------------------------------------------------------------------
     def get_users(self):
         return self.users_list
+
+    #   -------------------------------------------------------------------------------
+    def get_sids(self):
+        return self.sids_list
 
     #   -------------------------------------------------------------------------------
     def get_groups(self):
