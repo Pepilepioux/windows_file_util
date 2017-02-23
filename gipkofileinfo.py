@@ -68,12 +68,14 @@ Typical_perms = {
     1179817: "Read(RX)",
     1180086: "Add",
     1180095: "Add&Read",
-    1245631: "Change"
+    1245631: "Change",
+    1048609: "Walk Dir"
 }
 
 FULL_CONTROL = 2032127
 READ = 1179817
 CHANGE = 1245631
+WALK_DIR = 1048609
 
 VERSION = '2.2'
 
@@ -254,12 +256,38 @@ def add_perm(file, permission, *users):
     heritage = win32security.OBJECT_INHERIT_ACE | win32security.CONTAINER_INHERIT_ACE | win32security.INHERITED_ACE
 
     for u in users:
-        sid, domain, type = win32security.LookupAccountName ('', u)
+        sid, domain, type = win32security.LookupAccountName('', u)
         dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION, heritage, permission, sid)
 
     sd.SetSecurityDescriptorDacl(1, dacl, 0)
 
-    win32security.SetFileSecurity(file, win32security.DACL_SECURITY_INFORMATION,sd)
+    win32security.SetFileSecurity(file, win32security.DACL_SECURITY_INFORMATION, sd)
+
+
+#   -----------------------------------------------------------------------
+def add_perm_by_sid(file, permission, *sidlist):
+    """
+
+        Identique à add_perm, mais au lieu de passer une liste d'utilisateurs en français on passe
+        une liste de sid. Pour ne pas faire trois millions d'appels à win32security.LookupAccountName
+        quand on traite une arborescence.
+
+        Est-ce que ça vaut vraiment le coup ? un appel à win32security.LookupAccountName prend 3 ms.
+    """
+    logger = logging.getLogger()
+
+    mask = win32security.OWNER_SECURITY_INFORMATION | win32security.GROUP_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION
+    sd = win32security.GetFileSecurity(file, mask)
+    ownersid = sd.GetSecurityDescriptorOwner()
+    dacl = sd.GetSecurityDescriptorDacl()
+    heritage = win32security.OBJECT_INHERIT_ACE | win32security.CONTAINER_INHERIT_ACE | win32security.INHERITED_ACE
+
+    for sid in sidlist:
+        dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION, heritage, permission, sid)
+
+    sd.SetSecurityDescriptorDacl(1, dacl, 0)
+
+    win32security.SetFileSecurity(file, win32security.DACL_SECURITY_INFORMATION, sd)
 
 
 #   -----------------------------------------------------------------------
