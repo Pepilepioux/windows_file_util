@@ -1,0 +1,22 @@
+DIRECTORYTREE
+
+Affiche ou inscrit dans un fichier une vue arborescente de l'ensemble des
+sous-répertoires d'un répertoire donné, en incluant ou non les fichiers.
+
+Installation :
+Extraire le répertoire "directorytree" du fichier 7z et le copier sur le PC.
+
+Utilisation :
+Exécuter directorytree.exe. renseigner le nom du répertoire dont on veut
+afficher l'arborescente.
+
+"Fichier pour les résultats" : indiquer ici le nom d'un fichier dans lequel
+sera écrite l'arborescence. Si ce champ n'est pas renseigné elle sera affichée
+dans la fenêtre du programme. On pourra sélectionner tout ou partie de ce
+texte poour faire un copier-coller.
+
+"Imprimer aussi le détail des fichiers :" Si cette case est cochée
+l'arborescence montrera d'abord les fichiers, puis les sous-répertoires. Dans
+ce cas pour améliorer la lisibilité les noms des répertoires seront écrits
+en majuscules, ceux des fichiers en minuscules.
+

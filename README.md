@@ -10,6 +10,11 @@ Lists and handles file security information (owner, permissions).
 Retrieves users and groups information from a windows server
 
 
+### directory tree
+
+Shows an indented view of the sub-directories tree of a given directory. Optionally outputs it to a text file.
+
+
 ### fichiers_permissions_liste
 
 Walks a directory tree and for each subdirectory lists the access permissions.
