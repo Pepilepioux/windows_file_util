@@ -559,7 +559,7 @@ class FenetrePrincipale():
             """
             F.ecrire_arborescence()
             if F.htm:
-                F.ouvrir_URL(self.nomFichierSortie)
+                F.ouvrir_URL(r'file:///%s' % self.nomFichierSortie)
             messagebox.showinfo('Information', 'Arborescence de %s inscrite dans %s' % (self.nomRepertoire, self.nomFichierSortie))
         else:
             self.txtResultat.delete(0.0, tk.END)
