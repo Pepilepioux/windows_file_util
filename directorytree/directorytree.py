@@ -108,7 +108,7 @@ class FichierSortie():
             /*	Répertoire	*/
             {
                 font-size : 1.1em;
-                font-weight : bold;
+                color : #000080;
                 margin-top : 0.5em;
                 margin-bottom : 0.5em;
             }
@@ -116,26 +116,32 @@ class FichierSortie():
             .LR
             /*	Liste Répertoires...	*/
             {
+            padding-left : 0.5em;
             margin-left	: 3em	;
             margin-top	: 0.2em	;
             margin-bottom	: 0.5em	;
+            border-left: thin solid Silver;
             /*
-                border	: thin solid blue	;
+                border	: thin solid Aqua	;
             */
             }
 
             a.LienDiscret:link,
             a.LienDiscret:visited
             {
-                color	: #000	;
-                text-decoration	: none	;
+            margin : 0.05em 0.2em 0.05em 0;
+            padding : 0;
+            border : medium outset white;
+            font-size : 1.25em;
+            font-weight : bold;
+            color	: #000	;
+            text-decoration	: none	;
             }
 
 
             a.LienDiscret:hover
             {
-                color	: #00f	;
-                text-decoration	: underline	;
+            color	: #00f	;
             }
 
 
@@ -253,13 +259,13 @@ class FichierSortie():
 
         txt = '<p class="dir"><a href="javascript:Bascule(\'%s\');" class="LienDiscret">\n'
         if expanse:
-            txt += '<span id="Plus%s" style="display: none;">&nbsp;+&nbsp;</span>\n'
-            txt += '<span id="Moins%s">&nbsp;-&nbsp;</span>\n'
-            txt += '&nbsp;%s</a></p>\n<div class="LR" id="R%s">\n'
+            txt += '<span id="Plus%s" style="display: none;">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
+            txt += '<span id="Moins%s">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
+            txt += '</a>%s</p>\n<div class="LR" id="R%s">\n'
         else:
-            txt += '<span id="Plus%s">&nbsp;+&nbsp;</span>\n'
-            txt += '<span id="Moins%s" style="display: none;">&nbsp;-&nbsp;</span>\n'
-            txt += '&nbsp;%s</a></p>\n<div class="LR" style="display: none;" id="R%s">\n'
+            txt += '<span id="Plus%s">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
+            txt += '<span id="Moins%s" style="display: none;">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
+            txt += '</a>%s</p>\n<div class="LR" style="display: none;" id="R%s">\n'
 
         texte += txt % (self.numero, self.numero, self.numero, nom, self.numero)
         self.numero += 1
@@ -495,6 +501,7 @@ class FenetrePrincipale():
     def ouvrirSortie(self):
 
         nomFic = asksaveasfilename(filetypes=(("Fichiers texte", "*.txt"),
+                                              ("Fichiers html", "*.htm*"),
                                               ("Tous les fichiers", "*.*")),
                                    #  initialdir=self.repertoireDefaut,
                                    title='Fichier des résultats')
