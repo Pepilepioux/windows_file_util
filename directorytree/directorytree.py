@@ -554,7 +554,15 @@ class FenetrePrincipale():
         texte = self.directory_tree(self.nomRepertoire, self.fichiers_aussi.get(), htm=self.htm)
         """
         F = FichierSortie(self.nomFichierSortie, gui=self)
+        self.txtResultat.grid_forget()
+        self.window.update()
+        #   On va bloquer le redimensionnement dynamique qui est assez pénible quand les chemins sont longs
+        self.window.maxsize(width=self.window.winfo_width(), height=self.window.winfo_height())
+        # self.window.update()
         texte = F.charger_arborescence(self.nomRepertoire, self.fichiers_aussi.get())
+        #   C'est fini...
+        self.window.maxsize(width=0, height=0)
+        # self.window.update()
 
         self.stat_bar.set('%s', '')
 
