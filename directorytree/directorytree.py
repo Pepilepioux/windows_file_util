@@ -227,6 +227,7 @@ class FichierSortie():
     def __directory_tree_texte__(self, nomRepBase, fichiers_aussi, niveau=0, resultat=''):
         if self.gui:
             self.gui.stat_bar.set('%s', nomRepBase)
+            self.gui.window.update()
 
         if niveau is 0:
             #   Oui, c'est quand même plus joli si on rappelle le répertoire de tête...
@@ -289,6 +290,7 @@ class FichierSortie():
     def __directory_tree_html__(self, nomRepBase, fichiers_aussi, niveau=0):
         if self.gui:
             self.gui.stat_bar.set('%s', nomRepBase)
+            self.gui.window.update()
 
         resultat = ''
         niveau_initial = niveau
@@ -630,14 +632,19 @@ def LireParametres():
 
 
 # ------------------------------------------------------------------------------------
-def creer_logger(nomFichierLog, niveauLog):
+def creer_logger(niveauLog, nomFichierLog=None):
     """
         Je l'avais, je le garde... Pas sûr que ce soit VRAIMENT très utile.
     """
     logger = logging.getLogger()
     logger.setLevel(niveauLog)
     formatter = logging.Formatter('%(asctime)s	%(levelname)s	%(message)s')
-    Handler = logging.handlers.WatchedFileHandler(nomFichierLog)
+    
+    if nomFichierLog:
+        Handler = logging.handlers.WatchedFileHandler(nomFichierLog)
+    else:
+        Handler = logging.StreamHandler()
+
     Handler.setLevel(logging.DEBUG)
     Handler.setFormatter(formatter)
     Handler.set_name('Normal')
@@ -651,7 +658,7 @@ if __name__ == "__main__":
 
     locale.setlocale(locale.LC_ALL, '')
     if niveauLog:
-        creer_logger(nomFichierLog, niveauLog)
+        creer_logger(niveauLog, nomFichierLog)
 
     logger.info('Début du programme')
 

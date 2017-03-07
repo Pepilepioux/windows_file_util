@@ -27,3 +27,7 @@ ceux des fichiers en minuscules.
 Si l'impression est au format html on affiche d'abord les répertoires mais
 "repliés". Il faut cliquer sur le "+" pour afficher son contenu.
 
+ATTENTION !
+Si on lance cet utilitaire sur un partage réseau avec de très nombreux
+répertoires ça peut prendre TRÈS longtemps et laisser croire que le programme
+est planté.
