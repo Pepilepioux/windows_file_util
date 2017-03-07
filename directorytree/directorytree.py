@@ -199,6 +199,10 @@ class FichierSortie():
             <p>
             (sinon les petits "+" qui servent à sélectionner ce que vous cherchez ne marchent pas)
             </p>
+            <p>
+            Voici les <a href="http://www.enable-javascript.com/fr/" target="_blank">
+            instructions pour activer JavaScript dans votre navigateur Web</a>.
+            </p>
             </noscript>
 
             <h1>
