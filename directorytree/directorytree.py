@@ -517,8 +517,8 @@ class FenetrePrincipale():
     # ----------------------------------------------------------------------------------
     def ouvrirSortie(self):
 
-        nomFic = asksaveasfilename(filetypes=(("Fichiers texte", "*.txt"),
-                                              ("Fichiers html", "*.htm*"),
+        nomFic = asksaveasfilename(filetypes=(("Fichiers html", "*.htm*"),
+                                              ("Fichiers texte", "*.txt"),
                                               ("Tous les fichiers", "*.*")),
                                    #  initialdir=self.repertoireDefaut,
                                    title='Fichier des résultats')
