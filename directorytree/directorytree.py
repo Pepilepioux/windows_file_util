@@ -235,11 +235,15 @@ class FichierSortie():
             resultat = '{0}\n'.format(d)
             niveau += 1
 
-        liste = [(1 if os.path.isdir(os.path.join(nomRepBase, e)) else 0, e)
-                 for e in os.listdir(nomRepBase)
-                 if (os.path.isdir(os.path.join(nomRepBase, e)) or fichiers_aussi)
-                 ]
-        liste.sort(key=lambda le: [le[0], le[1].upper()])
+        try:
+            liste = [(1 if os.path.isdir(os.path.join(nomRepBase, e)) else 0, e)
+                     for e in os.listdir(nomRepBase)
+                     if (os.path.isdir(os.path.join(nomRepBase, e)) or fichiers_aussi)
+                     ]
+            liste.sort(key=lambda le: [le[0], le[1].upper()])
+        except PermissionError:
+            liste = []
+            logger.error('Accès refusé sur %s' % nomRepBase)
 
         for e in liste:
             if e[0]:
@@ -259,6 +263,7 @@ class FichierSortie():
         return resultat
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # @chrono_trace
     def __ecrire_repertoire_html__(self, nom, fichiers_aussi, niveau, expanse):
         texte = ''
 
@@ -278,6 +283,7 @@ class FichierSortie():
         return texte
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # @chrono_trace
     def __ecrire_fichier_html__(self, nom, niveau):
         if self.htm:
             texte = '<p class="fic">%s</p>\n' % nom
@@ -287,6 +293,7 @@ class FichierSortie():
         return texte
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # @chrono_trace
     def __directory_tree_html__(self, nomRepBase, fichiers_aussi, niveau=0):
         if self.gui:
             self.gui.stat_bar.set('%s', nomRepBase)
@@ -305,13 +312,17 @@ class FichierSortie():
         expanse = True if niveau is 0 or not fichiers_aussi else False
         #   Pour dire comment on présentera lesrépertoires par défaut
 
-        liste = [(1 if os.path.isdir(os.path.join(nomRepBase, e)) else 0, e)
-                 for e in os.listdir(nomRepBase)
-                 if (os.path.isdir(os.path.join(nomRepBase, e)) or fichiers_aussi)
-                 ]
+        try:
+            liste = [(1 if os.path.isdir(os.path.join(nomRepBase, e)) else 0, e)
+                     for e in os.listdir(nomRepBase)
+                     if (os.path.isdir(os.path.join(nomRepBase, e)) or fichiers_aussi)
+                     ]
 
-        liste.sort(key=lambda le: [le[0] * -1, le[1].upper()])
-        #   Oui, comme en html les répertoires sont repliables (et repliés par défaut) on les affiche en premier...
+            liste.sort(key=lambda le: [le[0] * -1, le[1].upper()])
+            #   Oui, comme en html les répertoires sont repliables (et repliés par défaut) on les affiche en premier...
+        except PermissionError:
+            liste = []
+            logger.error('Accès refusé sur %s' % nomRepBase)
 
         for e in liste:
             if e[0]:
