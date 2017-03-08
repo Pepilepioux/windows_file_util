@@ -243,6 +243,7 @@ class FichierSortie():
             liste.sort(key=lambda le: [le[0], le[1].upper()])
         except PermissionError:
             liste = []
+            resultat += '{0} ACCÈS INTERDIT sur {1}\n'.format((self.suivi * niveau), nomRepBase)
             logger.error('Accès refusé sur %s' % nomRepBase)
 
         for e in liste:
@@ -285,10 +286,7 @@ class FichierSortie():
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
     # @chrono_trace
     def __ecrire_fichier_html__(self, nom, niveau):
-        if self.htm:
-            texte = '<p class="fic">%s</p>\n' % nom
-        else:
-            texte = '{0} {1}\n'.format((self.suivi * niveau), nom.lower())
+        texte = '<p class="fic">%s</p>\n' % nom
 
         return texte
 
