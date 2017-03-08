@@ -8,6 +8,10 @@
         L'export peut se faire dans un fichier texte simple OU au format HTML.
         Et si c'est dans un fichier html on l'ouvre automatiquement.
 
+        2.1 2017-03-08
+        Traité le cas des "access denied".
+        amélioré l'affichage du status bar.
+
 """
 import tkinter as tk
 from tkinter import filedialog
@@ -29,7 +33,7 @@ import inspect
 import winreg
 import subprocess
 
-VERSION = '2.0'
+VERSION = '2.1'
 logger = logging.getLogger()
 suivi = ' |  '  # Pour une jolie mise en forme
 
@@ -109,6 +113,15 @@ class FichierSortie():
             {
                 font-size : 1.1em;
                 color : #000080;
+                margin-top : 0.5em;
+                margin-bottom : 0.5em;
+            }
+
+            .denied
+            /*	Répertoire avec access denied	*/
+            {
+                font-size : 1.1em;
+                color : #F00000;
                 margin-top : 0.5em;
                 margin-bottom : 0.5em;
             }
@@ -243,17 +256,25 @@ class FichierSortie():
             liste.sort(key=lambda le: [le[0], le[1].upper()])
         except PermissionError:
             liste = []
-            resultat += '{0} ACCÈS INTERDIT sur {1}\n'.format((self.suivi * niveau), nomRepBase)
-            logger.error('Accès refusé sur %s' % nomRepBase)
 
         for e in liste:
             if e[0]:
                 #   C'est un répertoire. On l'imprime et on récurse
                 #   Et si on imprime aussi les fichiers on met une ligne séparatrice
                 #   avant chaque répertoire pour faire joli.
+
+                #   Mais il faut d'abord savoir si on ne sera pas victime d'un access denied...
+                try:
+                    dummy = os.listdir(os.path.join(nomRepBase, e[1]))
+                    access_denied = False
+                except PermissionError:
+                    access_denied = True
+
+                complement = ' ### ACCÈS REFUSÉ ###' if access_denied else ''
                 ligne_vide = (self.suivi * niveau) + '\n' if fichiers_aussi else ''
                 d = e[1].upper() if fichiers_aussi else e[1]
-                resultat += '{0}{1}{2}\n'.format(ligne_vide, (self.suivi * niveau), d)
+                
+                resultat += '{0}{1}{2}{3}\n'.format(ligne_vide, (self.suivi * niveau), d, complement)
                 resultat += self.__directory_tree_texte__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau + 1)
             else:
                 #   C'est un fichier. On l'imprime
@@ -264,34 +285,37 @@ class FichierSortie():
         return resultat
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # @chrono_trace
-    def __ecrire_repertoire_html__(self, nom, fichiers_aussi, niveau, expanse):
+    def __ecrire_repertoire_html__(self, nom, fichiers_aussi, niveau, expanse, access_denied=False):
         texte = ''
 
-        txt = '<p class="dir"><a href="javascript:Bascule(\'%s\');" class="LienDiscret">\n'
-        if expanse:
-            txt += '<span id="Plus%s" style="display: none;">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
-            txt += '<span id="Moins%s">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
-            txt += '</a>%s</p>\n<div class="LR" id="R%s">\n'
+        if access_denied:
+            txt = '<div><p class="denied">%s&nbsp;:&nbsp;<span class="dir"><strong>Accès refusé</strong></span></p>'
+            #   Un <div> qui apparemment ne sert à rien simplement parce qu'un peu plus tard la fonction
+            #   appelante mettra un </div>
+            texte += txt % (nom)
         else:
-            txt += '<span id="Plus%s">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
-            txt += '<span id="Moins%s" style="display: none;">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
-            txt += '</a>%s</p>\n<div class="LR" style="display: none;" id="R%s">\n'
+            txt = '<p class="dir"><a href="javascript:Bascule(\'%s\');" class="LienDiscret">\n'
+            if expanse:
+                txt += '<span id="Plus%s" style="display: none;">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
+                txt += '<span id="Moins%s">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
+                txt += '</a>%s</p>\n<div class="LR" id="R%s">\n'
+            else:
+                txt += '<span id="Plus%s">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
+                txt += '<span id="Moins%s" style="display: none;">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
+                txt += '</a>%s</p>\n<div class="LR" style="display: none;" id="R%s">\n'
 
-        texte += txt % (self.numero, self.numero, self.numero, nom, self.numero)
-        self.numero += 1
+            texte += txt % (self.numero, self.numero, self.numero, nom, self.numero)
+            self.numero += 1
 
         return texte
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # @chrono_trace
     def __ecrire_fichier_html__(self, nom, niveau):
         texte = '<p class="fic">%s</p>\n' % nom
 
         return texte
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # @chrono_trace
     def __directory_tree_html__(self, nomRepBase, fichiers_aussi, niveau=0):
         if self.gui:
             self.gui.stat_bar.set('%s', nomRepBase)
@@ -305,7 +329,6 @@ class FichierSortie():
             #   Oui, c'est quand même plus joli si on rappelle le répertoire de tête...
             resultat += self.__ecrire_repertoire_html__(nomRepBase, fichiers_aussi, niveau, True)
             niveau += 1
-            #   self.numero += 1
 
         expanse = True if niveau is 0 or not fichiers_aussi else False
         #   Pour dire comment on présentera lesrépertoires par défaut
@@ -320,20 +343,21 @@ class FichierSortie():
             #   Oui, comme en html les répertoires sont repliables (et repliés par défaut) on les affiche en premier...
         except PermissionError:
             liste = []
-            logger.error('Accès refusé sur %s' % nomRepBase)
 
         for e in liste:
             if e[0]:
-                #   C'est un répertoire. On l'imprime et on récurse
-                #   Et si on imprime aussi les fichiers on met une ligne séparatrice
-                #   avant chaque répertoire pour faire joli.
-                d = e[1].upper() if fichiers_aussi and not self.htm else e[1]
-                resultat += self.__ecrire_repertoire_html__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau, expanse)
-                #   self.numero += 1
+                #   C'est un répertoire. On l'imprime et on récurse. Mais il faut d'abord savoir si on
+                #   ne sera pas victime d'un access denied...
+                try:
+                    dummy = os.listdir(os.path.join(nomRepBase, e[1]))
+                    access_denied = False
+                except PermissionError:
+                    access_denied = True
 
+                resultat += self.__ecrire_repertoire_html__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau, expanse, access_denied)
                 resultat += self.__directory_tree_html__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau + 1)
-                resultat += '</div>\n'
                 #   Le self.__ecrire_repertoire_html__ a ouvert un <div>. Il faut le fermer
+                resultat += '</div>\n'
 
             else:
                 #   C'est un fichier. On l'imprime
@@ -527,7 +551,7 @@ class FenetrePrincipale():
     # ----------------------------------------------------------------------------------
     def lancerTraitement(self):
         logger.debug('lancerTraitement')
-        self.nomRepertoire = self.txtEntree.get()
+        self.nomRepertoire = self.txtEntree.get().strip()
 
         #   Quelques petitesvérifications élémentaires...
         if self.nomRepertoire == '':
