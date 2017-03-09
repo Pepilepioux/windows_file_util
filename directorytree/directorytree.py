@@ -13,6 +13,9 @@
         Amélioré l'affichage du status bar.
         Amélioré l'affichage des boutons.
 
+        2.1 2017-03-09
+        Ajouté les boutons "Tout étendre" et "tout replier"
+
 """
 import tkinter as tk
 from tkinter import filedialog
@@ -154,7 +157,18 @@ class FichierSortie():
             }
 
 
-            a.LienDiscret:hover
+            a.LienDiscret1:link,
+            a.LienDiscret1:visited
+            {
+            margin : 0.05em 0.2em 0.05em 0;
+            padding : 0.5em;
+            border : medium outset white;
+            color	: #000	;
+            text-decoration	: none	;
+            }
+
+            a.LienDiscret:hover,
+            a.LienDiscret1:hover
             {
             color	: #00f	;
             }
@@ -191,19 +205,42 @@ class FichierSortie():
             }
             //-------------------------------------------------------
 
-            Event.observe(window, 'load', function() {
-                $$('div.LR p a.lf').invoke('observe', 'mouseup', function(event) {
 
-                    new Ajax.Request(
-                        '../maj_bdd/maj_bdd.php',
-                        {
-                            method: 'get',
-                            parameters: {Texte : Event.element(event).href , Session: "10173" }
-                        }
-                    );
+            function PlusTous()
+            {
+            for (i = 0; i <= ***NbElements***; i++)
+                {
+                Plus(i) ;
+                }
+            }
 
-                }.bindAsEventListener());
-            });
+            function MoinsTous()
+            {
+            for (i = ***NbElements***; i > 0; i--)
+                {
+                Moins(i) ;
+                }
+            }
+
+            function	Plus	( ielem	)
+            {
+            var	elem1	= 'R' + ielem	;
+            var	elem2	= 'Plus' + ielem	;
+            var	elem3	= 'Moins' + ielem	;
+            document.getElementById(elem1).style.display="";
+            document.getElementById(elem2).style.display="none";
+            document.getElementById(elem3).style.display="";
+            }
+
+            function	Moins( ielem	)
+            {
+            var	elem1	= 'R' + ielem	;
+            var	elem2	= 'Plus' + ielem	;
+            var	elem3	= 'Moins' + ielem	;
+            document.getElementById(elem2).style.display="";
+            document.getElementById(elem1).style.display="none";
+            document.getElementById(elem3).style.display="none";
+            }
 
             </script>
 
@@ -224,6 +261,9 @@ class FichierSortie():
             Arborescence répertoire
             </h1>
 
+            <p style="text-align:center"><a href="javascript:PlusTous();" class="LienDiscret1">&nbsp;Étendre tous les répertoires&nbsp;</a>
+            &nbsp;&nbsp;
+            <a href="javascript:MoinsTous();" class="LienDiscret1">&nbsp;Replier tous les répertoires&nbsp;</a></p>
             """
         self.html_fin = \
             """
@@ -392,7 +432,7 @@ class FichierSortie():
     def ecrire_arborescence(self):
         F = open(self.nom_fichier, 'w', encoding='utf-8')
         if self.htm:
-            F.write(self.html_debut)
+            F.write(self.html_debut.replace('***NbElements***', '%s' % (self.numero - 1)))
 
         F.write(self.arborescence)
 
