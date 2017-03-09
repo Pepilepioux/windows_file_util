@@ -10,7 +10,8 @@
 
         2.1 2017-03-08
         Traité le cas des "access denied".
-        amélioré l'affichage du status bar.
+        Amélioré l'affichage du status bar.
+        Amélioré l'affichage des boutons.
 
 """
 import tkinter as tk
@@ -147,6 +148,7 @@ class FichierSortie():
             border : medium outset white;
             font-size : 1.25em;
             font-weight : bold;
+            font-family : monospace;
             color	: #000	;
             text-decoration	: none	;
             }
@@ -273,7 +275,7 @@ class FichierSortie():
                 complement = ' ### ACCÈS REFUSÉ ###' if access_denied else ''
                 ligne_vide = (self.suivi * niveau) + '\n' if fichiers_aussi else ''
                 d = e[1].upper() if fichiers_aussi else e[1]
-                
+
                 resultat += '{0}{1}{2}{3}\n'.format(ligne_vide, (self.suivi * niveau), d, complement)
                 resultat += self.__directory_tree_texte__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau + 1)
             else:
@@ -296,12 +298,12 @@ class FichierSortie():
         else:
             txt = '<p class="dir"><a href="javascript:Bascule(\'%s\');" class="LienDiscret">\n'
             if expanse:
-                txt += '<span id="Plus%s" style="display: none;">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
-                txt += '<span id="Moins%s">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
+                txt += '<span id="Plus%s" style="display: none;">&nbsp;+&nbsp;</span>'
+                txt += '<span id="Moins%s">&nbsp;-&nbsp;</span>'
                 txt += '</a>%s</p>\n<div class="LR" id="R%s">\n'
             else:
-                txt += '<span id="Plus%s">&nbsp;&nbsp;+&nbsp;&nbsp;</span>'
-                txt += '<span id="Moins%s" style="display: none;">&nbsp;&nbsp;-&nbsp;&nbsp;</span>'
+                txt += '<span id="Plus%s">&nbsp;+&nbsp;</span>'
+                txt += '<span id="Moins%s" style="display: none;">&nbsp;-&nbsp;</span>'
                 txt += '</a>%s</p>\n<div class="LR" style="display: none;" id="R%s">\n'
 
             texte += txt % (self.numero, self.numero, self.numero, nom, self.numero)
@@ -334,6 +336,7 @@ class FichierSortie():
         #   Pour dire comment on présentera lesrépertoires par défaut
 
         try:
+            #   try parce qu'on peut tomber sur un répertoire à lecture refusée.
             liste = [(1 if os.path.isdir(os.path.join(nomRepBase, e)) else 0, e)
                      for e in os.listdir(nomRepBase)
                      if (os.path.isdir(os.path.join(nomRepBase, e)) or fichiers_aussi)
@@ -342,19 +345,22 @@ class FichierSortie():
             liste.sort(key=lambda le: [le[0] * -1, le[1].upper()])
             #   Oui, comme en html les répertoires sont repliables (et repliés par défaut) on les affiche en premier...
         except PermissionError:
+            #   ...mais on s'en fout, on continue sans rien faire.
             liste = []
 
         for e in liste:
             if e[0]:
                 #   C'est un répertoire. On l'imprime et on récurse. Mais il faut d'abord savoir si on
-                #   ne sera pas victime d'un access denied...
+                #   ne sera pas victime d'un access denied pour pouvoir préparer l'affichage en conséquence
                 try:
                     dummy = os.listdir(os.path.join(nomRepBase, e[1]))
                     access_denied = False
                 except PermissionError:
                     access_denied = True
 
+                #   1 on écrit la ligne avec le nom du répertoire...
                 resultat += self.__ecrire_repertoire_html__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau, expanse, access_denied)
+                #   2 on récurse.
                 resultat += self.__directory_tree_html__(os.path.join(nomRepBase, e[1]), fichiers_aussi, niveau + 1)
                 #   Le self.__ecrire_repertoire_html__ a ouvert un <div>. Il faut le fermer
                 resultat += '</div>\n'
@@ -672,7 +678,7 @@ def creer_logger(niveauLog, nomFichierLog=None):
     logger = logging.getLogger()
     logger.setLevel(niveauLog)
     formatter = logging.Formatter('%(asctime)s	%(levelname)s	%(message)s')
-    
+
     if nomFichierLog:
         Handler = logging.handlers.WatchedFileHandler(nomFichierLog)
     else:
