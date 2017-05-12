@@ -32,6 +32,9 @@
     Version 2.2 2017-02-21
         Ajouté la fonction add_perm.
 
+    Version 2.3 2017-05-12
+        Ajouté les fonctions get_tree_size, affichageHumain et dateISO.
+
 """
 #
 import win32security
@@ -370,3 +373,20 @@ def get_tree_size(dir):
 
 
 #   -----------------------------------------------------------------------
+def affichageHumain(taille):
+    prefixes = ['o', 'ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
+    facteur = 1000
+    n = 0
+    while taille > facteur and n < len(prefixes) - 1:
+        taille = taille / facteur
+        n += 1
+
+    return '%s %s' % (locale.format('%3.1f', taille, True), prefixes[n])
+
+
+# ------------------------------------------------------------------------------------
+def dateISO(timestamp):
+    return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+
+# ------------------------------------------------------------------------------------
