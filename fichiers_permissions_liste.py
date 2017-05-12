@@ -471,5 +471,24 @@ def liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions,
 
 # ------------------------------------------------------------------------------------
 if __name__ == '__main__':
+    infos_serveur={}
+    progression=True
+    """
+    Si on veut passer des infos sur les utilisateurs (appartenance aux groupes)
+    import gipkouserinfo
+    ad = gipkouserinfo.UserInfo('frvaldata12')
+    infos_serveur = {'users': ad.get_users(), 'groups': ad.get_groups()}
+    """
+
+    """
+        Pour test
+    nomRepBase = r'P:\comité de direction'
+    niveaumax = 1
+    nom_base_sorties = r'c:\temp\permissions_test'
+    liste_exclusions = LISTE_ADMINS
+    progression=False
+    fichiers_aussi = False
+    """
+
     nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi = LireParametres()
-    liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi, progression=True)
+    liste_permissions(nomRepBase, niveaumax, nom_base_sorties, liste_exclusions, fichiers_aussi, progression=progression, infos_serveur=infos_serveur)

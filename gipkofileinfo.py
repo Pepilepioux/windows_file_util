@@ -351,3 +351,22 @@ def get_user_s_perm(file, user, user_info):
     return [niveau]
 
 #   -----------------------------------------------------------------------
+def get_tree_size(dir):
+    if not os.path.isdir(dir):
+        raise NotADirectoryError('%s n\est pas un répertoire' % dir)
+
+    logger = logging.getLogger()
+    taille = 0
+    for D, dirs, fics in os.walk(dir):
+        for f in fics:
+            try:
+                #   Parce qu'on n'est pas sûr d'avoir un accès autorisé partout...
+                #   Ou qu'on est pas à l'abri d'un nom trop long !
+                taille += os.path.getsize(os.path.join(D, f))
+            except Exception as e:
+                logger.error(e)
+
+    return taille
+
+
+#   -----------------------------------------------------------------------
