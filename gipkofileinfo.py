@@ -41,6 +41,7 @@ import win32security
 import os
 import logging
 import traceback
+import locale
 
 All_perms = {
     1: "ACCESS_READ",  # 0x00000001
