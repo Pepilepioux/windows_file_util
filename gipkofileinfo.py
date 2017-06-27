@@ -35,6 +35,11 @@
     Version 2.3 2017-05-12
         Ajouté les fonctions get_tree_size, affichageHumain et dateISO.
 
+    Version 2.4 2017-06-27
+        Ajouté des fonctions de gestion des dates de fichier : get_file_dates, print_file_dates
+        et set_file_dates pour pouvoir corriger des fichiers et remettre ensuite (à la main)
+        sa date de modif originale.
+
 """
 #
 import win32security
@@ -42,6 +47,7 @@ import os
 import logging
 import traceback
 import locale
+import datetime
 
 All_perms = {
     1: "ACCESS_READ",  # 0x00000001
@@ -81,7 +87,7 @@ READ = 1179817
 CHANGE = 1245631
 WALK_DIR = 1048609
 
-VERSION = '2.2'
+VERSION = '2.4'
 
 
 #   -------------------------------------------------------------------------------
@@ -354,6 +360,7 @@ def get_user_s_perm(file, user, user_info):
 
     return [niveau]
 
+
 #   -----------------------------------------------------------------------
 def get_tree_size(dir):
     if not os.path.isdir(dir):
@@ -388,6 +395,31 @@ def affichageHumain(taille):
 # ------------------------------------------------------------------------------------
 def dateISO(timestamp):
     return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+
+# ------------------------------------------------------------------------------------
+def get_file_dates(nomfic):
+    return {'c': os.path.getctime(nomfic), 'a': os.path.getatime(nomfic), 'm': os.path.getmtime(nomfic)}
+
+
+# ------------------------------------------------------------------------------------
+def print_file_dates(nomfic, formatISO=False):
+    dates = get_file_dates(nomfic)
+    for cle in dates:
+        print('%s : %s' % (cle, dateISO(dates[cle]) if formatISO else dates[cle]))
+
+
+# ------------------------------------------------------------------------------------
+def set_file_dates(nomfic, modified, accessed=None, formatISO=False):
+    if accessed is None:
+        accessed = modified
+
+    if formatISO:
+        modified = datetime.datetime.strptime(modified, '%Y-%m-%d %H:%M:%S').timestamp()
+        accessed = datetime.datetime.strptime(accessed, '%Y-%m-%d %H:%M:%S').timestamp()
+
+    os.utime(nomfic, (accessed, modified))
+    pass
 
 
 # ------------------------------------------------------------------------------------

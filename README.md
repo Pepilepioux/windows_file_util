@@ -48,6 +48,11 @@ send an alert by mail. (mailing parameters also defined in ini file).
 Points out files and directories where a user is granted twice the same acces rights, with individual permissions and due
 to his group membership.
 
+### get_file_dates, print_file_dates and set_file_dates
+
+Return, print and set a file's access and modification dates (ISO or timestamp)
+
+
 ## Dependencies
 * python 3 (developed and tested with python 3.4)
 * (some modules) gipkomail available [here] (https://github.com/Pepilepioux/server_stats/)
