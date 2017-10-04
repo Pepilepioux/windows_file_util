@@ -5,6 +5,11 @@ Python modules to manage files (and file permissions) in windows environment.
 
 Lists and handles file security information (owner, permissions).
 
+### gipkofileutil
+
+Miscelaneous windows files utilities.
+Currently (Oct 2017) contains only a function that creates a shortcut.
+
 ### gipkouserinfo
 
 Retrieves users and groups information from a windows server
