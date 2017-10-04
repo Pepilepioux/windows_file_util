@@ -419,7 +419,6 @@ def set_file_dates(nomfic, modified, accessed=None, formatISO=False):
         accessed = datetime.datetime.strptime(accessed, '%Y-%m-%d %H:%M:%S').timestamp()
 
     os.utime(nomfic, (accessed, modified))
-    pass
 
 
 # ------------------------------------------------------------------------------------
