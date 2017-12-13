@@ -7,8 +7,9 @@ Lists and handles file security information (owner, permissions).
 
 ### gipkofileutil
 
-Miscelaneous windows files utilities.
-Currently (Oct 2017) contains only a function that creates a shortcut.
+Miscelaneous windows files utilities :
+- a function that creates a shortcut.
+- a function that returns the default program used to open files with a given extension
 
 ### gipkouserinfo
 
