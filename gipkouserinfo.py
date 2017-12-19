@@ -51,6 +51,9 @@
     Version 3.1 2017-02-22
         Ajouté une liste des SID par utilisateur.
 
+    Version 3.2 2017-12-19
+        Ajouté la propriété get_users_dict, dictionnaire par utilisateur de toutes les propriétés.
+
 """
 
 import win32net
@@ -60,7 +63,7 @@ import sys
 import win32security
 from win32com.client import *
 
-VERSION = '3.1'
+VERSION = '3.2'
 
 
 #   -------------------------------------------------------------------------------
@@ -82,9 +85,10 @@ class UserInfo:
         #   Fin Version 3.0
 
         self.groups_list = self.__get_groups__()
-        self.users_list = self.__get_users__()
+        self.users_list, self.users_dict = self.__get_users__()
         self.user_s_groups_list = self.__get_user_s_groups__()
         self.sids_list = self.__get_sids__()
+
         return
 
     #   -------------------------------------------------------------------------------
@@ -326,19 +330,21 @@ class UserInfo:
             "if nom in liste"
         """
         users_list = {}
+        users_dict = {}
         Reprise = 0
         Enr, Total, Reprise = win32net.NetUserEnum(self.server, 3, win32netcon.FILTER_NORMAL_ACCOUNT, Reprise, 1)
 
         while Reprise > 0:
             for Champ in Enr:
                 users_list[Champ['name'].lower()] = [Champ['full_name'], Champ['comment'], Champ['usr_comment'], Champ['user_id'], Champ['flags']]
+                users_dict[Champ['name'].lower()] = {cle: Champ[cle] for cle in Champ if cle != 'name'}
 
             Enr, Total, Reprise = win32net.NetUserEnum(self.server, 3, win32netcon.FILTER_NORMAL_ACCOUNT, Reprise, 1)
 
         if 'système' not in users_list:
             users_list['système'] = ['Système', 'Système', '', 0, 4260353]
 
-        return users_list
+        return users_list, users_dict
 
     #   -------------------------------------------------------------------------------
     def __get_sids__(self):
@@ -447,6 +453,10 @@ class UserInfo:
     #   -------------------------------------------------------------------------------
     def get_users(self):
         return self.users_list
+
+    #   -------------------------------------------------------------------------------
+    def get_users_dict(self):
+        return self.users_dict
 
     #   -------------------------------------------------------------------------------
     def get_sids(self):
