@@ -382,7 +382,7 @@ def get_tree_size(dir):
 
 #   -----------------------------------------------------------------------
 def affichageHumain(taille):
-    prefixes = ['o', 'ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
+    prefixes = [' o', 'ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
     facteur = 1000
     n = 0
     while taille > facteur and n < len(prefixes) - 1:
