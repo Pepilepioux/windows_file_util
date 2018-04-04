@@ -21,6 +21,12 @@ Retrieves users and groups information from a windows server
 Shows an indented view of the sub-directories tree of a given directory. Optionally outputs it to a text file.
 
 
+### gipkodir
+
+An improved "dir /s" with formatted output and optional selection criteria based on file date, size, extension, and 
+regular expression against file name.
+
+
 ### fichiers_permissions_liste
 
 Walks a directory tree and for each subdirectory lists the access permissions.
