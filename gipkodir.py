@@ -95,13 +95,13 @@ def LireParametres():
 
     #   On fait quelques vérifications :
     if not os.path.isdir(args.nomRepBase):
-        raise NotADirectoryError('%s n\'est pas un répertoire' % args.nomRepBase)
+        raise NotADirectoryError('%s n\'est pas un répertoire' % args.nomRepBase) from None
 
     if args.date_min:
         try:
             dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d').timestamp()
         except:
-            raise ValueError('Date min incorrecte, %s' % args.date_min)
+            raise ValueError('Date min incorrecte, %s' % args.date_min) from None
     else:
         dateMin = None
 
@@ -109,13 +109,13 @@ def LireParametres():
         try:
             dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d').timestamp()
         except:
-            raise ValueError('Date max incorrecte, %s' % args.date_max)
+            raise ValueError('Date max incorrecte, %s' % args.date_max) from None
     else:
         dateMax = None
 
     if args.size_min:
         if not re.search(patSize, args.size_min, re.I):
-            raise ValueError('Taille min incorrecte, %s' % args.size_min)
+            raise ValueError('Taille min incorrecte, %s' % args.size_min) from None
         else:
             facteur = 1000000000000 if re.search('t', args.size_min, re.I) \
                 else (1000000000 if re.search('g', args.size_min, re.I)
@@ -128,7 +128,7 @@ def LireParametres():
 
     if args.size_max:
         if not re.search(patSize, args.size_max, re.I):
-            raise ValueError('Taille max incorrecte, %s' % args.size_max)
+            raise ValueError('Taille max incorrecte, %s' % args.size_max) from None
         else:
             facteur = 1000000000000 if re.search('t', args.size_max, re.I) \
                 else (1000000000 if re.search('g', args.size_max, re.I)
@@ -148,7 +148,7 @@ def LireParametres():
         try:
             pattern = re.compile(args.pattern, re.I)
         except:
-            raise ValueError('%s n\'est pas une expression régulière correcte' % pattern)
+            raise ValueError('%s n\'est pas une expression régulière correcte' % pattern) from None
 
     else:
         pattern = None
@@ -202,7 +202,7 @@ if __name__ == '__main__':
         try:
             fic_sortie = open(ficSortie, 'w')
         except:
-            raise IOError('Impossible d\'ouvrir le fichier %s en écriture' % ficSortie)
+            raise IOError('Impossible d\'ouvrir le fichier %s en écriture' % ficSortie) from None
 
     liste = []
 
