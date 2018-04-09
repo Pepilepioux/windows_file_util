@@ -23,7 +23,7 @@
 
     rep          : le répertoire, haut de l'arborescence à parcourir. Défaut : répertoire courant.
     sortie       : le nom du fichier dans lequel écrire les résultats. Défaut : affichage à l'écran
-    date mini    : on ne traitera que les fichiers postérieurs à cette date.
+    date mini    : on ne traitera que les fichiers postérieurs à cette date. Format ISO, jour seul ou jour + heure.
     date maxi    : on ne traitera que les fichiers antérieurs à cette date.
     taille mini  : on ne traitera que les fichiers dont la taille est supérieure à cette valeur.
                     nombre entier suffixé par une abréviation de taille (k|m|g|t). Ex : "-s 200ko", "-s 1M"
@@ -99,17 +99,23 @@ def LireParametres():
 
     if args.date_min:
         try:
-            dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d').timestamp()
+            dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d %H:%M:%S').timestamp()
         except:
-            raise ValueError('Date min incorrecte, %s' % args.date_min) from None
+            try:
+                dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d').timestamp()
+            except:
+                raise ValueError('Date min incorrecte, %s' % args.date_min) from None
     else:
         dateMin = None
 
     if args.date_max:
         try:
-            dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d').timestamp()
+            dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d %H:%M:%S').timestamp()
         except:
-            raise ValueError('Date max incorrecte, %s' % args.date_max) from None
+            try:
+                dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d').timestamp()
+            except:
+                raise ValueError('Date max incorrecte, %s' % args.date_max) from None
     else:
         dateMax = None
 
