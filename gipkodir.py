@@ -26,7 +26,7 @@
     date mini    : on ne traitera que les fichiers postérieurs à cette date. Format ISO, jour seul ou jour + heure.
     date maxi    : on ne traitera que les fichiers antérieurs à cette date.
     taille mini  : on ne traitera que les fichiers dont la taille est supérieure à cette valeur.
-                    nombre entier suffixé par une abréviation de taille (k|m|g|t). Ex : "-s 200ko", "-s 1M"
+                    nombre entier suffixé par une abréviation de taille (k|m|g|t)o?. Ex : "-s 200ko", "-s 1M"
     taille maxi  : on ne traitera que les fichiers dont la taille est inférieure à cette valeur.
     extension(s) : liste d'extensions à prendre en compte, sous la forme ".ext1,.ext2,.extn". Attention,
                     le point fait partie de l'extension ! Tous les fichiers dont l'extension n'est pas
