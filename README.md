@@ -26,6 +26,8 @@ Shows an indented view of the sub-directories tree of a given directory. Optiona
 An improved "dir /s" with formatted output and optional selection criteria based on file date, size, extension, and 
 regular expression against file name.
 
+gipkodir.7z contains a standalone windows 64 bits executable. 
+
 
 ### fichiers_permissions_liste
 

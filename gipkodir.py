@@ -32,9 +32,11 @@
                     le point fait partie de l'extension ! Tous les fichiers dont l'extension n'est pas
                     dans la liste seront ignorés.
                     Défaut : aucun, on prend toutes les extensions.
-    regexp       : une expression régulière que devra matcher le nom du fichier. Attention, c'est une VRAIE
-                    expression régulière, pas le "joker" de windows ! Ainsi "n'importe quoi" s'écrira bien
-                    ".*" et non simplement "*".
+    regexp       : une expression régulière que devra matcher le nom COMPLET du fichier (y compris l'arborescence de 
+                   répertoires). Attention, c'est une VRAIE expression régulière, pas le "joker" de windows !
+                   Ainsi "n'importe quoi" s'écrira bien ".*" et non simplement "*".
+                   Pour spécifier une expression que devront matcher les répertoires mettre évidemmet \\ autour
+                   dans la regexp...
     niveau log   : Quel type d'évènement on inscrira dans le journal. Défaut : warning (30). Le niveau
                     debug (10) liste les fichiers qui ont été éliminé d'après les critères de date, taille,
                     extension ou expression régulière.
@@ -51,6 +53,9 @@
 
     Version 1.0 2018-04-04
         Original.
+
+    Version 1.1 2019-12-08
+        L'expression régulière est testée sur le chmin complet et non plus sur le seul nom du fichier
 
 """
 
@@ -222,7 +227,8 @@ if __name__ == '__main__':
                 continue
 
             #   Deuxième test, simple aussi : le filtre sur la pattern
-            if pattern and not re.search(pattern, fic):
+            #   if pattern and not re.search(pattern, fic):
+            if pattern and not re.search(pattern, nomComplet):
                 logger.debug('%s éliminé par l\'expression régulière' % nomComplet)
                 continue
 
