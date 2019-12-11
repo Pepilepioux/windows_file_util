@@ -23,7 +23,9 @@
 
     rep          : le répertoire, haut de l'arborescence à parcourir. Défaut : répertoire courant.
     sortie       : le nom du fichier dans lequel écrire les résultats. Défaut : affichage à l'écran
-    date mini    : on ne traitera que les fichiers postérieurs à cette date. Format ISO, jour seul ou jour + heure.
+    date mini    : on ne traitera que les fichiers postérieurs à cette date. Format ISO, jour seul ou jour + heure
+                    mais sans fuseau horaire, jour et date séparés soit par un "T" soit par une espace. Dans ce 
+                    dernier cas la date doit être indiquée entre guillemets.
     date maxi    : on ne traitera que les fichiers antérieurs à cette date.
     taille mini  : on ne traitera que les fichiers dont la taille est supérieure à cette valeur.
                     nombre entier suffixé par une abréviation de taille (k|m|g|t)o?. Ex : "-s 200ko", "-s 1M"
@@ -87,8 +89,8 @@ def LireParametres():
 
     parser = argparse.ArgumentParser(description='Dir amélioré')
     parser.add_argument('--output', '-o', action='store', help='Nom du fichier qui contiendra le résultat. Si absent, affichage à l\'écran.')
-    parser.add_argument('--date-min', '-d', action='store', help='Ne prendre en compte que les fichiers postérieurs à cette date (format ISO)')
-    parser.add_argument('--date-max', '-D', action='store', help='Ne prendre en compte que les fichiers antérieurs à cette date (format ISO)')
+    parser.add_argument('--date-min', '-d', action='store', help='Ne prendre en compte que les fichiers postérieurs à cette date (format ISO, avec ou sans l\'heure)')
+    parser.add_argument('--date-max', '-D', action='store', help='Ne prendre en compte que les fichiers antérieurs à cette date (format ISO, avec ou sans l\'heure)')
     parser.add_argument('--size-min', '-s', action='store', help='Ne prendre en compte que les fichiers de taille supérieure à cette valeur. Format : nnnko/mo/go')
     parser.add_argument('--size-max', '-S', action='store', help='Ne prendre en compte que les fichiers de taille inférieure à cette valeur. Format : nnnko/mo/go')
     parser.add_argument('--extensions', '-e', action='store', help='Extension(s) prise(s) en compte. format ".xt1,.xt2,.xtn"')
@@ -104,23 +106,29 @@ def LireParametres():
 
     if args.date_min:
         try:
-            dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d %H:%M:%S').timestamp()
+            dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%dT%H:%M:%S').timestamp()
         except:
             try:
-                dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d').timestamp()
+                dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d %H:%M:%S').timestamp()
             except:
-                raise ValueError('Date min incorrecte, %s' % args.date_min) from None
+                try:
+                    dateMin = datetime.datetime.strptime(args.date_min, '%Y-%m-%d').timestamp()
+                except:
+                    raise ValueError('Date min incorrecte, %s' % args.date_min) from None
     else:
         dateMin = None
 
     if args.date_max:
         try:
-            dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d %H:%M:%S').timestamp()
+            dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%dT%H:%M:%S').timestamp()
         except:
             try:
-                dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d').timestamp()
+                dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d %H:%M:%S').timestamp()
             except:
-                raise ValueError('Date max incorrecte, %s' % args.date_max) from None
+                try:
+                    dateMax = datetime.datetime.strptime(args.date_max, '%Y-%m-%d').timestamp()
+                except:
+                    raise ValueError('Date max incorrecte, %s' % args.date_max) from None
     else:
         dateMax = None
 
