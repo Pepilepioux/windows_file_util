@@ -23,8 +23,8 @@ Shows an indented view of the sub-directories tree of a given directory. Optiona
 
 ### gipkodir
 
-An improved "dir /s" with formatted output and optional selection criteria based on file date, size, extension, and 
-regular expression against file name.
+An improved "dir /s" with formatted output and optional selection criteria based on file date, size, extension,
+regular expression against file name and regular expression against file content (text files only).
 
 gipkodir.7z contains a standalone windows 64 bits executable. 
 

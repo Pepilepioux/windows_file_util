@@ -19,30 +19,46 @@
     ---------
     python gipkodir.py [rep] [--output|-o sortie] [--date-min|-d date mini] [--date-max|-D date maxi]
                        [--size-min|-s taille mini] [--size-max|-S taille maxi] [--extensions|-e extension(s)]
-                       [--pattern|-p regexp] [--log-level|-l niveau log] [--human-display|-H]
+                       [--pattern|-p regexp nom fichier] [--log-level|-l niveau log] [--human-display|-H]
+                       [--texte-cherche|-t regexp contenu fichier]
 
     rep          : le répertoire, haut de l'arborescence à parcourir. Défaut : répertoire courant.
+
     sortie       : le nom du fichier dans lequel écrire les résultats. Défaut : affichage à l'écran
+
     date mini    : on ne traitera que les fichiers postérieurs à cette date. Format ISO, jour seul ou jour + heure
                     mais sans fuseau horaire, jour et date séparés soit par un "T" soit par une espace. Dans ce 
                     dernier cas la date doit être indiquée entre guillemets.
+
     date maxi    : on ne traitera que les fichiers antérieurs à cette date.
+
     taille mini  : on ne traitera que les fichiers dont la taille est supérieure à cette valeur.
                     nombre entier suffixé par une abréviation de taille (k|m|g|t)o?. Ex : "-s 200ko", "-s 1M"
+
     taille maxi  : on ne traitera que les fichiers dont la taille est inférieure à cette valeur.
+
     extension(s) : liste d'extensions à prendre en compte, sous la forme ".ext1,.ext2,.extn". Attention,
                     le point fait partie de l'extension ! Tous les fichiers dont l'extension n'est pas
                     dans la liste seront ignorés.
                     Défaut : aucun, on prend toutes les extensions.
-    regexp       : une expression régulière que devra matcher le nom COMPLET du fichier (y compris l'arborescence de 
+
+    regexp nom fichier      : une expression régulière que devra matcher le nom COMPLET du fichier (y compris l'arborescence de 
                    répertoires). Attention, c'est une VRAIE expression régulière, pas le "joker" de windows !
                    Ainsi "n'importe quoi" s'écrira bien ".*" et non simplement "*".
                    Pour spécifier une expression que devront matcher les répertoires mettre évidemmet \\ autour
                    dans la regexp...
+
+    regexp contenu fichier  : une expression régulière que devra matcher le contenu du fichier. Attention, comme c'est
+                   toujours traité comme une expression régulière il faut penser à échapper les caractères
+                   spéciaux comme le point, l'étoile, l'antislash etc.
+                   Si cet argument est spécifié et qu'un fichier ne peut pas être lu (pas du texte, problème
+                   d'encodage etc) ce fichier sera éliminé de la liste des fichiers trouvés.
+
     niveau log   : Quel type d'évènement on inscrira dans le journal. Défaut : warning (30). Le niveau
                     debug (10) liste les fichiers qui ont été éliminé d'après les critères de date, taille,
                     extension ou expression régulière.
                     Le fichier log est gipkodir.log dans le répertoire de l'application.
+
     -H           : Si spécifié, la date sera affichée au format ISO et les tailles en o, ko, Mo, Go, etc arrondies.
                     Sinon les dates seront affichée au format ISO ET timestamp, les tailles en octets
                     sans séparateur de milliers.
@@ -57,7 +73,12 @@
         Original.
 
     Version 1.1 2019-12-08
-        L'expression régulière est testée sur le chmin complet et non plus sur le seul nom du fichier
+        L'expression régulière est testée sur le chemin complet et non plus sur le seul nom du fichier
+
+    Version 1.2 2020-01-01
+        On peut aussi rechercher une expression régulière dans le contenu du fichier.
+        Cosmétique : pendant la recherche on fait tourner une petite hélice pour montrer que le
+        programme est toujours vivant.
 
 """
 
@@ -69,6 +90,7 @@ import logging.handlers
 import traceback
 import datetime
 import re
+import itertools
 from gipkofileinfo import *
 
 fic_sortie = None
@@ -94,7 +116,8 @@ def LireParametres():
     parser.add_argument('--size-min', '-s', action='store', help='Ne prendre en compte que les fichiers de taille supérieure à cette valeur. Format : nnnko/mo/go')
     parser.add_argument('--size-max', '-S', action='store', help='Ne prendre en compte que les fichiers de taille inférieure à cette valeur. Format : nnnko/mo/go')
     parser.add_argument('--extensions', '-e', action='store', help='Extension(s) prise(s) en compte. format ".xt1,.xt2,.xtn"')
-    parser.add_argument('--pattern', '-p', action='store', help='Expression régulière de sélection')
+    parser.add_argument('--pattern', '-p', action='store', help='Expression régulière de sélection du nom de fichier')
+    parser.add_argument('--texte-cherche', '-t', action='store', help='Expression régulière à chercher dans le contenu du fichier')
     parser.add_argument('--log-level', '-l', default='30', action='store', help='Niveau de log')
     parser.add_argument('--human-display', '-H', action='count', help='Affichage lisible pour un humain')
     parser.add_argument('nomRepBase', default=os.path.realpath('.'), action='store', help='Nom du répertoire à examiner', nargs='?')
@@ -172,6 +195,15 @@ def LireParametres():
     else:
         pattern = None
 
+    if args.texte_cherche:
+        try:
+            texte_cherche = re.compile(args.texte_cherche, re.I)
+        except:
+            raise ValueError('%s n\'est pas une expression régulière correcte' % texte_cherche) from None
+
+    else:
+        texte_cherche = None
+
     if args.output:
         ficSortie = args.output
     else:
@@ -184,7 +216,7 @@ def LireParametres():
 
     humainementLisible = True if args.human_display else False
 
-    return args.nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible
+    return args.nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible, texte_cherche
 
 
 # ------------------------------------------------------------------------------------
@@ -212,10 +244,11 @@ def creer_logger(nomFichierLog, niveauLog):
 
 # ------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible = LireParametres()
+    nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible, texte_cherche = LireParametres()
     logger = logging.getLogger()
     creer_logger(nomFichierLog, niveauLog)
     logger.info('Début programme')
+    helice = itertools.cycle(['\r\t|', '\r\t/', '\r\t-', '\r\t\\'])
 
     if ficSortie:
         try:
@@ -228,6 +261,7 @@ if __name__ == '__main__':
     for D, dirs, fics in os.walk(nomRepBase):
         for fic in fics:
             nomComplet = os.path.join(D, fic)
+            print(next(helice), end='')
 
             #   Premier test tout simple : le filtre sur les extensions
             if extensions and os.path.splitext(os.path.basename(nomComplet))[1] not in extensions:
@@ -287,8 +321,21 @@ if __name__ == '__main__':
                 logger.debug('%s éliminé parce que plus grand que taille max' % nomComplet)
                 continue
 
+            if texte_cherche:
+                try:
+                    with open(nomComplet, 'r') as f:
+                        contenu = f.read()
+                except Exception as e:
+                    logger.warning('Pas pu lire le contenu du fichier {0} pour y chercher l\'expression régulière'.format(nomComplet))
+                    continue
+
+                if not re.search(texte_cherche, contenu):
+                    logger.debug('%s éliminé parce qu\il ne contient pas l\'expression régulière indiquée' % nomComplet)
+                    continue
+
             liste.append([dateMod, taille, nomComplet])
 
+    print('\r')
     for e in liste:
         if humainementLisible:
             ligne = dateISO(e[0]) + '   {: >10s}'.format(affichageHumain(e[1])) + '   ' + e[2]
