@@ -6,66 +6,98 @@
     - sa taille
     - son nom complet, y compris le chemin
 
-    La sortie se fait soit dans un fichier soit à l'écran. Les champs sont de largeur fixe.
-    On peut choisir entre un format destiné à la lecture humaine (date au format ISO, taille arrondie
-    exprimée en ko, mo, go) et un format destiné au retraitement.
+    La sortie se fait soit dans un fichier soit à l'écran. Les champs sont de
+    largeur fixe.
+    On peut choisir entre un format destiné à la lecture humaine (date au format
+    ISO, taille arrondie exprimée en ko, mo, go) et un format destiné au
+    retraitement.
 
-    On peut faire une sélection sur la taille, la date de dernière modification, l'extension, et une
-    expression régulière sur le nom du fichier. ATTENTION cependant avec les expressions régulières :
-    toutes les syntaxes possibles n'ont pas été testées, on peut avoir des surprises. Notamment si on
-    veut utiliser un chapeau (^) il faut soit le doubler, soit mettre l'expression entre guillemets (")
+    On peut faire une sélection sur la taille, la date de dernière modification,
+    l'extension, et une expression régulière sur le nom du fichier.
+    ATTENTION cependant avec les expressions régulières : toutes les syntaxes
+    possibles n'ont pas été testées, on peut avoir des surprises. Notamment si
+    on veut utiliser un chapeau (^) il faut soit le doubler, soit mettre
+    l'expression entre guillemets (")
 
     Syntaxe :
     ---------
-    python gipkodir.py [rep] [--output|-o sortie] [--date-min|-d date mini] [--date-max|-D date maxi]
-                       [--size-min|-s taille mini] [--size-max|-S taille maxi] [--extensions|-e extension(s)]
-                       [--pattern|-p regexp nom fichier] [--log-level|-l niveau log] [--human-display|-H]
+    python gipkodir.py [rep]
+                       [--output|-o sortie]
+                       [--date-min|-d date mini]
+                       [--date-max|-D date maxi]
+                       [--size-min|-s taille mini]
+                       [--size-max|-S taille maxi]
+                       [--extensions|-e extension(s)]
+                       [--pattern|-p regexp nom fichier]
+                       [--log-level|-l niveau log]
+                       [--human-display|-H]
+                       [--doc]
                        [--texte-cherche|-t regexp contenu fichier]
 
-    rep          : le répertoire, haut de l'arborescence à parcourir. Défaut : répertoire courant.
+    rep          : le répertoire, haut de l'arborescence à parcourir. Défaut :
+                   répertoire courant.
 
-    sortie       : le nom du fichier dans lequel écrire les résultats. Défaut : affichage à l'écran
+    sortie       : le nom du fichier dans lequel écrire les résultats.
+                   Défaut : affichage à l'écran
 
-    date mini    : on ne traitera que les fichiers postérieurs à cette date. Format ISO, jour seul ou jour + heure
-                    mais sans fuseau horaire, jour et date séparés soit par un "T" soit par une espace. Dans ce 
-                    dernier cas la date doit être indiquée entre guillemets.
+    date mini    : on ne traitera que les fichiers postérieurs à cette date.
+                   Format ISO, jour seul ou jour + heure mais sans fuseau
+                   horaire, jour et date séparés soit par un "T" soit par une
+                   espace. Dans ce dernier cas la date doit être indiquée
+                   entre guillemets.
 
     date maxi    : on ne traitera que les fichiers antérieurs à cette date.
 
-    taille mini  : on ne traitera que les fichiers dont la taille est supérieure à cette valeur.
-                    nombre entier suffixé par une abréviation de taille (k|m|g|t)o?. Ex : "-s 200ko", "-s 1M"
+    taille mini  : on ne traitera que les fichiers dont la taille est supérieure
+                   à cette valeur. nombre entier suffixé par une abréviation de
+                   taille (k|m|g|t)o?. Ex : "-s 200ko", "-s 1M"
 
-    taille maxi  : on ne traitera que les fichiers dont la taille est inférieure à cette valeur.
+    taille maxi  : on ne traitera que les fichiers dont la taille est inférieure
+                   à cette valeur.
 
-    extension(s) : liste d'extensions à prendre en compte, sous la forme ".ext1,.ext2,.extn". Attention,
-                    le point fait partie de l'extension ! Tous les fichiers dont l'extension n'est pas
-                    dans la liste seront ignorés.
-                    Défaut : aucun, on prend toutes les extensions.
+    extension(s) : liste d'extensions à prendre en compte, sous la forme
+                   ".ext1,.ext2,.extn".
+                   Attention, le point fait partie de l'extension ! Tous les
+                   fichiers dont l'extension n'est pas dans la liste seront
+                   ignorés. Défaut : aucun, on prend toutes les extensions.
 
-    regexp nom fichier      : une expression régulière que devra matcher le nom COMPLET du fichier (y compris l'arborescence de 
-                   répertoires). Attention, c'est une VRAIE expression régulière, pas le "joker" de windows !
-                   Ainsi "n'importe quoi" s'écrira bien ".*" et non simplement "*".
-                   Pour spécifier une expression que devront matcher les répertoires mettre évidemmet \\ autour
-                   dans la regexp...
+    regexp nom fichier :
+                   une expression régulière que devra matcher le nom COMPLET du
+                   fichier (y compris l'arborescence de répertoires). Attention,
+                   c'est une VRAIE expression régulière, pas le "joker" de
+                   windows !
+                   Ainsi "n'importe quoi" s'écrira bien ".*" et non
+                   simplement "*". Pour spécifier une expression que devront
+                   matcher les répertoires mettre évidemmet \\\\ autour dans la
+                   regexp...
 
-    regexp contenu fichier  : une expression régulière que devra matcher le contenu du fichier. Attention, comme c'est
-                   toujours traité comme une expression régulière il faut penser à échapper les caractères
+    regexp contenu fichier  :
+                   une expression régulière que devra matcher le contenu du
+                   fichier. Attention, comme c'est toujours traité comme une
+                   expression régulière il faut penser à échapper les caractères
                    spéciaux comme le point, l'étoile, l'antislash etc.
-                   Si cet argument est spécifié et qu'un fichier ne peut pas être lu (pas du texte, problème
-                   d'encodage etc) ce fichier sera éliminé de la liste des fichiers trouvés.
+                   Si cet argument est spécifié et qu'un fichier ne peut pas
+                   être lu (pas du texte, problème d'encodage etc) ce fichier
+                   sera éliminé de la liste des fichiers trouvés.
 
-    niveau log   : Quel type d'évènement on inscrira dans le journal. Défaut : warning (30). Le niveau
-                    debug (10) liste les fichiers qui ont été éliminé d'après les critères de date, taille,
-                    extension ou expression régulière.
-                    Le fichier log est gipkodir.log dans le répertoire de l'application.
+    niveau log   : Quel type d'évènement on inscrira dans le journal.
+                   Défaut : warning (30). Le niveau debug (10) liste les
+                   fichiers qui ont été éliminé d'après les critères de date,
+                   taille, extension ou expression régulière. Le fichier log est
+                   gipkodir.log dans le répertoire de l'application.
 
-    -H           : Si spécifié, la date sera affichée au format ISO et les tailles en o, ko, Mo, Go, etc arrondies.
-                    Sinon les dates seront affichée au format ISO ET timestamp, les tailles en octets
-                    sans séparateur de milliers.
+    -H           : Si spécifié, la date sera affichée au format ISO et les
+                   tailles en o, ko, Mo, Go, etc arrondies. Sinon les dates
+                   seront affichée au format ISO ET timestamp, les tailles en
+                   octets sans séparateur de milliers.
 
-    ATTENTION, il n'y a pas de vérification de cohérence entre les mini et les maxi,
-    ni pour les dates, ni pour les tailles !
+    --doc        : Si spécifié, affiche simplement la documentation (docstring)
+                   du module
 
+    ATTENTION, il n'y a pas de vérification de cohérence entre les mini et
+    les maxi, ni pour les dates, ni pour les tailles !
+
+    ---------------------------------------------------------------------------
     Historique :
     ------------
 
@@ -73,12 +105,17 @@
         Original.
 
     Version 1.1 2019-12-08
-        L'expression régulière est testée sur le chemin complet et non plus sur le seul nom du fichier
+        L'expression régulière est testée sur le chemin complet et non plus sur
+        le seul nom du fichier
 
     Version 1.2 2020-01-01
-        On peut aussi rechercher une expression régulière dans le contenu du fichier.
-        Cosmétique : pendant la recherche on fait tourner une petite hélice pour montrer que le
-        programme est toujours vivant.
+        On peut aussi rechercher une expression régulière dans le contenu du
+        fichier.
+        Cosmétique : pendant la recherche on fait tourner une petite hélice
+        pour montrer que le programme est toujours vivant.
+
+    Version 1.3 2020-01-05
+        Ajout de l'argument --doc pour afficher la docstring.
 
 """
 
@@ -109,7 +146,7 @@ def LireParametres():
 
     patSize = '^\d{1,3}[kmgt]?o?$'
 
-    parser = argparse.ArgumentParser(description='Dir amélioré')
+    parser = argparse.ArgumentParser(description='Dir amélioré. gipkodir --doc pour voir la doc complète')
     parser.add_argument('--output', '-o', action='store', help='Nom du fichier qui contiendra le résultat. Si absent, affichage à l\'écran.')
     parser.add_argument('--date-min', '-d', action='store', help='Ne prendre en compte que les fichiers postérieurs à cette date (format ISO, avec ou sans l\'heure)')
     parser.add_argument('--date-max', '-D', action='store', help='Ne prendre en compte que les fichiers antérieurs à cette date (format ISO, avec ou sans l\'heure)')
@@ -120,6 +157,7 @@ def LireParametres():
     parser.add_argument('--texte-cherche', '-t', action='store', help='Expression régulière à chercher dans le contenu du fichier')
     parser.add_argument('--log-level', '-l', default='30', action='store', help='Niveau de log')
     parser.add_argument('--human-display', '-H', action='count', help='Affichage lisible pour un humain')
+    parser.add_argument('--doc', action='count', help='Affiche la doc complète de ce module')
     parser.add_argument('nomRepBase', default=os.path.realpath('.'), action='store', help='Nom du répertoire à examiner', nargs='?')
     args = parser.parse_args()
 
@@ -215,8 +253,9 @@ def LireParametres():
         niveauLog = logging.WARNING
 
     humainementLisible = True if args.human_display else False
+    afficherDoc = True if args.doc else False
 
-    return args.nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible, texte_cherche
+    return args.nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible, afficherDoc, texte_cherche
 
 
 # ------------------------------------------------------------------------------------
@@ -244,7 +283,12 @@ def creer_logger(nomFichierLog, niveauLog):
 
 # ------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible, texte_cherche = LireParametres()
+    nomRepBase, dateMin, dateMax, sizeMin, sizeMax, extensions, pattern, ficSortie, nomFichierLog, niveauLog, humainementLisible, afficherDoc, texte_cherche = LireParametres()
+
+    if afficherDoc:
+        print(__doc__)
+        sys.exit()
+
     logger = logging.getLogger()
     creer_logger(nomFichierLog, niveauLog)
     logger.info('Début programme')
