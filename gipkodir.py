@@ -117,6 +117,11 @@
     Version 1.3 2020-01-05
         Ajout de l'argument --doc pour afficher la docstring.
 
+    Version 1.4 2020-01-09
+        Ajout de la détection des encodages utf-16 et utf-8-bom parce que la
+        première expérience a montré qu'il y avait des farceurs qui 
+        utilisent (inutilement) des encodages à la con.
+
 """
 
 import argparse
@@ -259,6 +264,15 @@ def LireParametres():
 
 
 # ------------------------------------------------------------------------------------
+def tableBoms():
+    bom8 = '\xef\xbb\xbf'
+    bom16be = '\xfe\xff'
+    bom16le = '\xff\xfe'
+    boms = {bom8 : 'utf-8', bom16be : 'utf-16-be', bom16le: 'utf-16-le'}
+    return boms
+
+
+# ------------------------------------------------------------------------------------
 def output(ligne):
     #   global fic_sortie
     ligne += '\n'
@@ -293,6 +307,7 @@ if __name__ == '__main__':
     creer_logger(nomFichierLog, niveauLog)
     logger.info('Début programme')
     helice = itertools.cycle(['\r\t|', '\r\t/', '\r\t-', '\r\t\\'])
+    boms = tableBoms()
 
     if ficSortie:
         try:
@@ -315,7 +330,7 @@ if __name__ == '__main__':
             #   Deuxième test, simple aussi : le filtre sur la pattern
             #   if pattern and not re.search(pattern, fic):
             if pattern and not re.search(pattern, nomComplet):
-                logger.debug('%s éliminé par l\'expression régulière' % nomComplet)
+                logger.debug('%s éliminé par l\'expression régulière sur le nom' % nomComplet)
                 continue
 
             #   Maintenant on a besoin de la taille et des dates des fichiers.
@@ -354,7 +369,7 @@ if __name__ == '__main__':
                 continue
 
             if dateMax and dateMod > dateMax:
-                logger.debug('%s élimaxé parce que postérieur à date max' % nomComplet)
+                logger.debug('%s éliminé parce que postérieur à date max' % nomComplet)
                 continue
 
             if sizeMin and taille < sizeMin:
@@ -373,8 +388,16 @@ if __name__ == '__main__':
                     logger.warning('Pas pu lire le contenu du fichier {0} pour y chercher l\'expression régulière'.format(nomComplet))
                     continue
 
+                #   Y'a des farceurs qui nous encodent leurs fichiers en utf 16... Faut gérer !
+                for bom in boms:
+                    if contenu[:len(bom)] == bom:
+                        logger.debug('{0} encodé en {1}'.format(nomComplet, boms[bom]))
+                        with open(nomComplet, 'r', encoding=boms[bom]) as f:
+                            contenu = f.read()
+                        break
+
                 if not re.search(texte_cherche, contenu):
-                    logger.debug('%s éliminé parce qu\il ne contient pas l\'expression régulière indiquée' % nomComplet)
+                    logger.debug('%s éliminé parce qu\'il ne contient pas l\'expression régulière indiquée' % nomComplet)
                     continue
 
             liste.append([dateMod, taille, nomComplet])
