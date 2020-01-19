@@ -400,7 +400,10 @@ if __name__ == '__main__':
                     if contenu[:len(bom)] == bom:
                         logger.debug('{0} encodé en {1}'.format(nomComplet, boms[bom]))
                         with open(nomComplet, 'r', encoding=boms[bom]) as f:
-                            contenu = f.read()
+                            try:
+                                contenu = f.read()
+                            except Exception as e:
+                                logger.warning('Pas pu lire le contenu du fichier {0} en {1} pour y chercher l\'expression régulière'.format(nomComplet, boms[bom]))
                         break
 
                 if not re.search(texte_cherche, contenu):
