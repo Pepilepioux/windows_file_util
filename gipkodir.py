@@ -25,6 +25,7 @@
     Syntaxe :
     ---------
     python gipkodir.py [--doc]
+                       [--Version]
                        [--output|-o sortie]
                        [--date-min|-d date mini]
                        [--date-max|-D date maxi]
@@ -38,6 +39,9 @@
                        [rep]
 
     --doc        : Si spécifié, affiche simplement la documentation (docstring)
+                   du module. Aucun traitement.
+
+    --version    : Si spécifié, affiche simplement la version
                    du module. Aucun traitement.
 
     sortie       : le nom du fichier dans lequel écrire les résultats.
@@ -166,8 +170,15 @@ def LireParametres():
     parser.add_argument('--log-level', '-l', default='30', action='store', help='Niveau de log')
     parser.add_argument('--human-display', '-H', action='count', help='Affichage lisible pour un humain')
     parser.add_argument('--doc', action='count', help='Affiche la doc complète de ce module')
+    parser.add_argument('--version', action='count', help='Affiche la version de ce module')
     parser.add_argument('nomRepBase', default=os.path.realpath('.'), action='store', help='Nom du répertoire à examiner', nargs='?')
     args = parser.parse_args()
+
+    if args.version:
+        #       return {'c': os.path.getctime(nomfic), 'a': os.path.getatime(nomfic), 'm': os.path.getmtime(nomfic)}
+        print('Version {0} du {1}'.format(VERSION, dateISO(get_file_dates(Fpgm)['m'])))
+        sys.exit()
+
 
     #   On fait quelques vérifications :
     if not os.path.isdir(args.nomRepBase):
