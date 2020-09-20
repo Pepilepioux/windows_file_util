@@ -1,12 +1,21 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 """
-    Test de remplissage d'un disque
+    Test de remplissage des disques d'un ensempble de serveurs.
 
-    Ce programme détermine l'espace disponible sur des disques et envoie un message aux destinataires indiqués
-    si cet espace devient trop faible en fonction des paramètres indiqués dans le fichier ini.
+    Ce programme détermine l'espace disponible sur les disques indiqués dans le fichier .ini.
+    Si cet espace devient trop faible (en fonction des paramètres indiqués dans le fichier .ini)
+    il envoie un message aux destinataires indiqués.
+
+    Il inscrit le résultat complet de ses recherches dans le fichier surveillance_espace_disque.log.
+    ATTENTION, ce fichier log est en mode "append", il faut penser à le purgeg manuellement de temps en temps.
 
     Contenu du fichier ini :
+
+    [General]
+    #   Facultatif.
+    #   NiveauLog : 10 = debug, 20 = info (par défaut), 40 = erreur, 50 = critique / fatal
+
 
     [Repertoire]
     #   Obligatoire.
@@ -41,17 +50,18 @@
     #   Facultatif. Si l'émetteur, le serveur ou le "a" ne sont pas renseignés on n'envoie pas d'alerte
     #   par mail. C'est un peu bête...
     #
-    #   Comme c'est fait pour être utilisé en entreprise, donc avec authentification par AD, il n'y a
-    #   pas d'authentification prévue pour l'envoi de mail.
-    #   Si c'est nécessaire voir le module gipkomail pour l'ajouter.
     #
-    sender = automate@mondomaine.net
-    serveur = smtp.mondomaine.net
-    a = moi@mondomaine.net
-    cc = collegue@mondomaine.net,prestataire@soustraitant.com
-
+    sender      Obligatoire. automate@mondomaine.net
+    serveur     Obligatoire. Le serveur SMPT pour l'envoi des mels. "smtp.mondomaine.net", "serveur-exchange"...
+    user        identifiant sur le serveur SMTP.
+                Facultatif si l'utilisateur windows qui exécute le programme est connu sur le serveur SMTP.
+                Obligatoire sinon.
+    mdp         mot de passe de user
+    a           Obligatoire. Destinataire des mels. "moi@mondomaine.net"
+    cc          Facultatif. Destinataires à mettre en copie. "collegue@mondomaine.net,prestataire@soustraitant.com"...
 
 """
+import argparse
 import configparser
 import ctypes
 import locale
@@ -68,10 +78,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import gipkomail
+from gipkofileinfo import *
 
 TYPE_VALEUR = 0
 TYPE_POURCENT = 1
-VERSION = '2.0'
+VERSION = '2.1'
 
 
 #   -------------------------------------------------------------------------------------------------------------------------
@@ -127,11 +138,26 @@ def LireParametres():
     else:
         Fpgm = os.path.realpath(__file__)
 
+    parser = argparse.ArgumentParser(description='Recherche espace disponible sur les disques. surveillance_espace_disque --doc pour voir la doc complète')
+    parser.add_argument('--doc', action='count', help='Affiche la doc complète de ce module')
+    parser.add_argument('--version', action='count', help='Affiche la version de ce module')
+    args = parser.parse_args()
+
+    if args.version:
+        print('Version {0} du {1}'.format(VERSION, dateISO(get_file_dates(Fpgm)['m'])))
+        sys.exit()
+
+    if args.doc:
+        print(__doc__)
+        sys.exit()
+
     nomFichierIni = os.path.join(os.path.dirname(Fpgm), os.path.splitext(os.path.basename(Fpgm))[0]) + '.ini'
     nomFichierLog = os.path.join(os.path.dirname(Fpgm), os.path.splitext(os.path.basename(Fpgm))[0]) + '.log'
 
     config = configparser.RawConfigParser()
     config.read(nomFichierIni)
+
+    niveau_log = config.getint('General', 'NiveauLog', fallback=20)
 
     try:
         repertoires = config.get('Repertoire', 'disques')
@@ -204,16 +230,28 @@ def LireParametres():
         # print('Ligne %s' % inspect.getframeinfo(inspect.currentframe())[1])
 
     try:
-        serveur = config.get('Messagerie', 'serveur')
+        smtp_serveur = config.get('Messagerie', 'serveur')
     except Exception as e:
-        avertissements.append('Erreur lecture serveur, %s' % e)
-        serveur = None
+        avertissements.append('Erreur lecture serveur SMPT, %s' % e)
+        smtp_serveur = None
 
     try:
-        sender = config.get('Messagerie', 'sender')
+        smtp_sender = config.get('Messagerie', 'sender')
     except Exception as e:
         avertissements.append('Erreur lecture sender, %s' % e)
-        sender = None
+        smtp_sender = None
+
+    try:
+        smtp_user = config.get('Messagerie', 'user')
+    except Exception as e:
+        avertissements.append('Erreur lecture sender, %s' % e)
+        smtp_user = None
+
+    try:
+        smtp_pwd = config.get('Messagerie', 'mdp')
+    except Exception as e:
+        avertissements.append('Erreur lecture sender, %s' % e)
+        smtp_pwd = None
 
     try:
         destinataire = config.get('Messagerie', 'A')
@@ -227,9 +265,10 @@ def LireParametres():
     except Exception as e:
         listeCopies = []
 
-    return infos, destinataire, listeCopies, nomFichierIni, nomFichierLog, sender, serveur, erreurs, avertissements
+    return infos, destinataire, listeCopies, nomFichierIni, nomFichierLog, smtp_sender, smtp_serveur, smtp_user, smtp_pwd, niveau_log, erreurs, avertissements
 
 
+"""
 # ------------------------------------------------------------------------------------
 def EnvoyerMesage(serveur, sender, destinataire, listeCopies, subject, contenu):
     logger = logging.getLogger()
@@ -250,6 +289,7 @@ def EnvoyerMesage(serveur, sender, destinataire, listeCopies, subject, contenu):
     s.quit()
 
 
+"""
 # ------------------------------------------------------------------------------------
 def affichageHumain(taille):
     prefixes = ['o', 'ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
@@ -259,7 +299,7 @@ def affichageHumain(taille):
         taille = taille / facteur
         n += 1
 
-    return '%s %s' % (locale.format('%3.1f', taille, True), prefixes[n])
+    return '%s %s' % (locale.format_string('%3.1f', taille, True), prefixes[n])
 
 
 # ------------------------------------------------------------------------------------
@@ -272,7 +312,7 @@ def creer_logger(nomFichierLog, niveauLog=logging.INFO, formatter=None):
         formatter = logging.Formatter('%(asctime)s	%(levelname)s	%(message)s')
 
     Handler = logging.handlers.WatchedFileHandler(nomFichierLog)
-    Handler.setLevel(logging.INFO)
+    Handler.setLevel(niveauLog)
     Handler.setFormatter(formatter)
     logger.addHandler(Handler)
 
@@ -284,14 +324,12 @@ ts_debut = time.time()
 locale.setlocale(locale.LC_TIME, '')
 locale.setlocale(locale.LC_NUMERIC, 'French')
 
-sender = 'informatique@ipmfrance.com'
-serveur = 'exchange'
 source = socket.gethostname()
 
 # Acquisition des paramètres...
-listeRepertoires, destinataire, listeCopies, nomFichierIni, nomFichierLog, sender, serveur, erreurs, avertissements = LireParametres()
+listeRepertoires, destinataire, listeCopies, nomFichierIni, nomFichierLog, smtp_sender, smtp_serveur, smtp_user, smtp_pwd, niveau_log, erreurs, avertissements = LireParametres()
 
-creer_logger(nomFichierLog, niveauLog=logging.DEBUG)
+creer_logger(nomFichierLog, niveauLog=niveau_log)
 logger.info('Début du programme')
 for e in avertissements:
     logger.warning(e)
@@ -300,7 +338,7 @@ for e in erreurs:
     logger.error(e)
 
 if erreurs:
-    logger.info('Trop d\'erreurs, impossible de continuer. Fin du programme\n')
+    logger.error('Trop d\'erreurs, impossible de continuer. Fin du programme\n')
     exit()
 
 listeDisques = [disque(r, listeRepertoires[r]['taille'], listeRepertoires[r]['type']) for r in listeRepertoires]
@@ -312,7 +350,7 @@ for d in listeDisques:
     if d.valide:
         texte = d.chemin
         texte += '\tLibres:\t%s\tsur\t%s' % (affichageHumain(d.espaceLibre), affichageHumain(d.espaceTotal))
-        texte += '\tsoit\t%s %%' % locale.format('%3.1f', (d.espaceLibre / d.espaceTotal) * 100, True)
+        texte += '\tsoit\t%s %%' % locale.format_string('%3.1f', (d.espaceLibre / d.espaceTotal) * 100, True)
         texte += '\t%s\t%s' % (d.espaceTotal, d.espaceLibre)
         if d.alerte:
             contenu += texte + '\n'
@@ -323,8 +361,21 @@ for d in listeDisques:
 
     logger.info(texte)
 
-if contenu and sender and serveur and destinataire:
-    gipkomail.envoyer_message(serveur, sender, destinataire, sujet, contenu_texte=contenu, cc=listeCopies)
+if contenu and smtp_sender and smtp_serveur and destinataire:
+    """
+            envoyer_message(serveur, sender, destinataire, subject,  contenu_texte=contenuTexte, smtp_user=smtp_user,
+                    smtp_pwd=smtp_pwd, contenu_html=contenuHTML, cc=listeCopies, bcc=listeBCC, files=files)
+    """
+    try:
+        rep = gipkomail.envoyer_message(smtp_serveur, smtp_sender, destinataire, sujet, contenu_texte=contenu, smtp_user=smtp_user, smtp_pwd=smtp_pwd, cc=listeCopies)
+    except Exception as e:
+        logger.error('Erreur envoi message.')
+        logger.critical(e)
+    else:
+        if rep:
+            logger.warning('Erreur(s) lors de l\'envoi des messages')
+            for item in rep.items():
+                logger.warning(item)
 
 logger.info('Fin du programme\n')
 exit()
