@@ -14,42 +14,41 @@
 
     [General]
     #   Facultatif.
-    #   NiveauLog : 10 = debug, 20 = info (par défaut), 40 = erreur, 50 = critique / fatal
-
-
-    [Repertoire]
-    #   Obligatoire.
-    #   Liste des disques à surveiller, séparés par des virgules. Disques locaux ou réseau.
-    #   Attention, pour les lettres de disque NE PAS METTRE ":\"
-    disques = C,D,U,V,\\server04\c$,\\server04\d$,\\server04\v$,\\server12\c$,\\server12\e$,\\server12\f$
+    NiveauLog : 10 = debug, 20 = info (par défaut), 40 = erreur, 50 = critique / fatal
+    TailleDefaut    la valeur qu'on prendra si le seuil n'est pas renseigné correctement
+    TypeDefaut      1 = %, 0 = valeur absolue
 
     [Seuils]
-    #   Pour chacun des disques de la section précédente le seuil de remplissage qui déclenchera une
+    #   Pour chaque disque à surveiller, "disque = seuil", le seuil de remplissage qui déclenchera une
     #   alerte par mail.
     #
-    #   Peut être une valeur absolue (nombre <espace> mo, mb, go, gb, to ou tb) ou un
+    #   Attention, pour les lettres de disque NE PAS METTRE ":\"
+    #   Le seuil peut être une valeur absolue (nombre <espace> mo, mb, go, gb, to ou tb) ou un
     #   pourcentage (nombre <espace> %)
     #
-    #   Valeur par défaut si non spécifié : 5 %
+    #   Valeur par défaut si non spécifié : défini dans la section "General", avec un défaut
+    #	en dur de 10 %
 
-    \\server04\c$	= 10 %
-    \\server04\d$	= 20 %
+    \\LTC001\c$	= 20 %
+    \\LTC001\d$	= 20 %
+    \\LTC001\e$	= 20 %
     \\server04\v$	= 20 %
+    \\jpc008 =
+    \\nas001\volume_1 =
+    C = 10 %
+    D = 20 %
+    E = 20 %
+    Z = 100 Go
 
-    C	= 10 %
-    D	= 10 %
-    U	= 25 Go
-    V	= 25 Go
-
-    \\server12\c$	= 10 %
-    \\server12\e$	= 50 Go
-    \\server12\f$	= 50 Go
 
     [Messagerie]
     #
     #   Facultatif. Si l'émetteur, le serveur ou le "a" ne sont pas renseignés on n'envoie pas d'alerte
     #   par mail. C'est un peu bête...
     #
+    #   Comme c'est fait pour être utilisé en entreprise, donc avec authentification par AD, il n'y a
+    #   pas d'authentification prévue pour l'envoi de mail.
+    #   Si c'est nécessaire voir le module gipkomail pour l'ajouter.
     #
     sender      Obligatoire. automate@mondomaine.net
     serveur     Obligatoire. Le serveur SMPT pour l'envoi des mels. "smtp.mondomaine.net", "serveur-exchange"...
@@ -82,7 +81,7 @@ from gipkofileinfo import *
 
 TYPE_VALEUR = 0
 TYPE_POURCENT = 1
-VERSION = '2.1'
+VERSION = '2.2'
 
 
 #   -------------------------------------------------------------------------------------------------------------------------
@@ -158,40 +157,22 @@ def LireParametres():
     config.read(nomFichierIni)
 
     niveau_log = config.getint('General', 'NiveauLog', fallback=20)
-
-    try:
-        repertoires = config.get('Repertoire', 'disques')
-        lr = [e.strip(string.whitespace) for e in repertoires.split(',')]
-    except Exception as e:
-        erreurs.append('Erreur lecture disques, %s' % e)
-        lr = []
+    taille_defaut = config.getint('General', 'TailleDefaut', fallback=5)
+    type_defaut = config.getint('General', 'NiveauLog', fallback=TYPE_POURCENT)
+    if type_defaut != TYPE_POURCENT:
+        type_defaut = TYPE_VALEUR
 
     infos = {}
-    tailleDefaut = 5
-    typeDefaut = TYPE_POURCENT
-    for r in lr:
-        """
-        Y'a un chni avec les lettres de disques. Le configparser ne sait pas lire les clés contenant le caractère "deux points"
-        Il faudra donc ruser et ajouter le suffixe ":\" si le chemin consiste en une seule lettre
-        """
-        try:
-            infosSeuil = config.get('Seuils', r)
-        except:
-            infosSeuil = None
-            if re.match('^[A-Za-z]$', r):
-                r += ':\\'
-            infos[r] = {'taille': tailleDefaut, 'type': typeDefaut}
-            avertissements.append('Erreur lecture seuils pour %s, on prend les valeurs par défaut' % r)
-            continue
+    for disque in config['Seuils']:
+        infos_seuil = config['Seuils'][disque]
+        if re.match('^[A-Za-z]$', disque):
+            disque += ':\\'
 
-        if re.match('^[A-Za-z]$', r):
-            r += ':\\'
-
-        valeurLue = re.split('\s+', infosSeuil.strip())
+        valeurLue = re.split('\\s+', infos_seuil.strip())
 
         if len(valeurLue) != 2:
-            infos[r] = {'taille': tailleDefaut, 'type': typeDefaut}
-            avertissements.append('Erreur seuils pour %s, "%s", on prend les valeurs par défaut' % (r, infosSeuil))
+            infos[disque] = {'taille': taille_defaut, 'type': type_defaut}
+            avertissements.append('Erreur seuils pour %s, "%s", on prend les valeurs par défaut' % (disque, infos_seuil))
             continue
 
         # On a bien deux valeurs. La première DOIT être numérique
@@ -199,35 +180,32 @@ def LireParametres():
         # Puisque les américains ne sont pas foutus d'utiliser le bon séparateur décimal...
         try:
             valeurLue[0] = float(valeurLue[0])
-        except:
-            infos[r] = {'taille': tailleDefaut, 'type': typeDefaut}
+        except Exception as e:
+            infos[disque] = {'taille': taille_defaut, 'type': type_defaut}
             avertissements.append('%s n\'est pas une valeur numérique correcte, on prend les valeurs par défaut' % (valeurLue[0]))
-            # print('Ligne %s' % inspect.getframeinfo(inspect.currentframe())[1])
             continue
 
-        # print('valeurLue[1].lower() = "%s"' % valeurLue[1].lower())
         # Maintenant on a bien un nombre et une deuxième valeur
         if valeurLue[1].lower() == 'mo' or valeurLue[1].lower() == 'mb':
-            infos[r] = {'taille': valeurLue[0] * 1024 * 1024, 'type': TYPE_VALEUR}
+            infos[disque] = {'taille': valeurLue[0] * 1024 * 1024, 'type': TYPE_VALEUR}
             continue
 
         if valeurLue[1].lower() == 'go' or valeurLue[1].lower() == 'gb':
-            infos[r] = {'taille': valeurLue[0] * 1024 * 1024 * 1024, 'type': TYPE_VALEUR}
+            infos[disque] = {'taille': valeurLue[0] * 1024 * 1024 * 1024, 'type': TYPE_VALEUR}
             continue
 
         if valeurLue[1].lower() == 'to' or valeurLue[1].lower() == 'tb':
-            infos[r] = {'taille': valeurLue[0] * 1024 * 1024 * 1024 * 1024, 'type': TYPE_VALEUR}
+            infos[disque] = {'taille': valeurLue[0] * 1024 * 1024 * 1024 * 1024, 'type': TYPE_VALEUR}
             continue
 
         if valeurLue[1] == '%':
             # On teste si valeur > 100 ?
             # Bôf, non, on s'en fout, ils ont qu'à faire attention !
-            infos[r] = {'taille': valeurLue[0], 'type': TYPE_POURCENT}
+            infos[disque] = {'taille': valeurLue[0], 'type': TYPE_POURCENT}
             continue
 
         # Si on arrive là c'est qu'on n'a pas réussi à décrypter
         avertissements.append('%s %s n\'est pas une valeur correcte, on prend les valeurs par défaut' % (valeurLue[0], valeurLue[1]))
-        # print('Ligne %s' % inspect.getframeinfo(inspect.currentframe())[1])
 
     try:
         smtp_serveur = config.get('Messagerie', 'serveur')
@@ -268,28 +246,6 @@ def LireParametres():
     return infos, destinataire, listeCopies, nomFichierIni, nomFichierLog, smtp_sender, smtp_serveur, smtp_user, smtp_pwd, niveau_log, erreurs, avertissements
 
 
-"""
-# ------------------------------------------------------------------------------------
-def EnvoyerMesage(serveur, sender, destinataire, listeCopies, subject, contenu):
-    logger = logging.getLogger()
-    msg = MIMEMultipart()
-    msg = MIMEText(contenu)
-    msg['From'] = sender
-    msg['To'] = destinataire
-    msg['CC'] = ','.join(listeCopies)
-    msg['Subject'] = subject
-
-    addr_from = sender
-    addr_to = []
-    addr_to.append(destinataire)
-    addr_to += listeCopies
-
-    s = smtplib.SMTP(serveur)
-    rep = s.sendmail(addr_from, addr_to, msg.as_string())
-    s.quit()
-
-
-"""
 # ------------------------------------------------------------------------------------
 def affichageHumain(taille):
     prefixes = ['o', 'ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo']
