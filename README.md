@@ -29,6 +29,14 @@ regular expression against file name and regular expression against file content
 gipkodir.7z contains a standalone windows 64 bits executable. 
 
 
+### gipkowalk
+
+Performs a standard "walk" but optionnally filters the results on size, date modified, file extension, file name 
+(full path. Regular expression), and file content (Regular expression, relevant only for text files).
+Yields directoly, file name, size and date modified.
+
+
+
 ### fichiers_permissions_liste
 
 Walks a directory tree and for each subdirectory lists the access permissions.
